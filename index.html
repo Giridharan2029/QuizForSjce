@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizVerse — Realtime Gamified Quiz Platform</title>
+  <meta name="description"
+    content="The Tesla of Quiz Platforms. Ultra-fast realtime multiplayer quiz competitions with AI question generation and deep engagement.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/landing.css">
+  <link rel="stylesheet" href="css/game.css">
+  <link rel="stylesheet" href="css/leaderboard.css">
+</head>
+
+<body>
+
+  <!-- Root SPA Container -->
+  <div id="app"></div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" id="auth-modal-title">Log In to QuizVerse</h3>
+        <button class="modal-close" onclick="document.getElementById('auth-modal').classList.add('hidden')">✕</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap: var(--space-4);">
+        <div class="input-group" id="auth-name-group" style="display:none;">
+          <label class="input-label">Full Name</label>
+          <input type="text" id="auth-input-name" class="input" placeholder="e.g. Alex Morgan">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Email Address</label>
+          <input type="email" id="auth-input-email" class="input" placeholder="name@example.com">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Password</label>
+          <input type="password" id="auth-input-password" class="input" placeholder="••••••••">
+        </div>
+
+        <div id="auth-error-msg" style="color: #ff6b6b; font-size: 0.875rem; min-height: 1.25rem; text-align: center;">
+        </div>
+        <button class="btn btn-primary btn-lg w-full" id="auth-submit-btn" onclick="window.submitAuthForm()">Log
+          In</button>
+        <div class="text-center text-sm text-secondary" id="auth-toggle-link" style="cursor:pointer;"
+          onclick="window.toggleAuthMode()">
+          Don't have an account? <span class="text-accent font-bold">Sign Up</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.IO Client Library -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- 1. Data & Utility Engines -->
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/game-engine.js"></script>
+
+  <!-- 2. Core SPA Framework & Router (Loaded BEFORE page scripts!) -->
+  <script src="js/app.js"></script>
+
+  <!-- 3. All Page Controllers -->
+  <script src="pages/landing.js"></script>
+  <script src="pages/dashboard.js"></script>
+  <script src="pages/quiz-builder.js"></script>
+  <script src="pages/host-panel.js"></script>
+  <script src="pages/player-game.js"></script>
+  <script src="pages/leaderboard.js"></script>
+  <script src="pages/analytics.js"></script>
+  <script src="pages/profile.js"></script>
+  <script src="pages/marketplace.js"></script>
+  <script src="pages/classroom.js"></script>
+  <script src="pages/scheduled-tests.js"></script>
+
+  <script>
+    let isSignUp = false;
+    window.openAuthModal = function (signup = false) {
+      isSignUp = signup;
+      const title = document.getElementById('auth-modal-title');
+      const nameGroup = document.getElementById('auth-name-group');
+      const btn = document.getElementById('auth-submit-btn');
+      const toggle = document.getElementById('auth-toggle-link');
+      const errEl = document.getElementById('auth-error-msg');
+      if (errEl) errEl.textContent = '';
+
+      if (signup) {
+        title.textContent = 'Create QuizVerse Account';
+        nameGroup.style.display = 'flex';
+        btn.textContent = 'Sign Up Free';
+        toggle.innerHTML = 'Already have an account? <span class="text-accent font-bold">Log In</span>';
+      } else {
+        title.textContent = 'Log In to QuizVerse';
+        nameGroup.style.display = 'none';
+        btn.textContent = 'Log In';
+        toggle.innerHTML = 'Don\'t have an account? <span class="text-accent font-bold">Sign Up</span>';
+      }
+      document.getElementById('auth-modal').classList.remove('hidden');
+    };
+
+    window.toggleAuthMode = function () {
+      window.openAuthModal(!isSignUp);
+    };
+
+    window.submitAuthForm = async function () {
+      const email = document.getElementById('auth-input-email').value.trim();
+      const password = document.getElementById('auth-input-password').value;
+      const name = document.getElementById('auth-input-name').value.trim();
+      const btn = document.getElementById('auth-submit-btn');
+      const errEl = document.getElementById('auth-error-msg');
+
+      if (errEl) errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = isSignUp ? 'Creating Account...' : 'Logging In...';
+
+      try {
+        if (isSignUp) {
+          await QVAuth.signUp(name, email, password);
+        } else {
+          await QVAuth.logIn(email, password);
+        }
+        // Clear inputs on success
+        document.getElementById('auth-input-email').value = '';
+        document.getElementById('auth-input-password').value = '';
+        document.getElementById('auth-input-name').value = '';
+        document.getElementById('auth-modal').classList.add('hidden');
+      } catch (err) {
+        if (errEl) {
+          errEl.textContent = err.message;
+        } else {
+          alert(err.message);
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = isSignUp ? 'Sign Up Free' : 'Log In';
+      }
+    };
+  </script>
+</body>
+
+</html>

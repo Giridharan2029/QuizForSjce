@@ -1,0 +1,32 @@
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 10px rgba(108, 92, 231, 0.2); }
+  50% { box-shadow: 0 0 25px rgba(108, 92, 231, 0.6); }
+  100% { box-shadow: 0 0 10px rgba(108, 92, 231, 0.2); }
+}
+
+@keyframes xpBarFill {
+  from { width: 0%; }
+}
+
+@keyframes timerPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); color: var(--accent-red); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s ease forwards;
+}
+
+.animate-glow {
+  animation: pulseGlow 2.5s infinite;
+}
+
+.timer-critical {
+  animation: timerPulse 0.8s infinite;
+}

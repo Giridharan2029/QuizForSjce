@@ -1,0 +1,45 @@
+:root {
+  /* Color Palette - Vibrant Dark Mode */
+  --bg-primary: #0b0f19;
+  --bg-secondary: #13192b;
+  --bg-tertiary: #1c233d;
+  --bg-card: rgba(25, 32, 56, 0.7);
+  --bg-card-hover: rgba(35, 45, 78, 0.85);
+
+  --accent-primary: #6c5ce7;
+  --accent-primary-hover: #5b4bc4;
+  --accent-gradient: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+  --accent-cyan: #00cec9;
+  --accent-amber: #fdcb6e;
+  --accent-pink: #fd79a8;
+  --accent-green: #00b894;
+  --accent-red: #ff7675;
+
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-accent: #a29bfe;
+
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-glow: rgba(108, 92, 231, 0.4);
+
+  --font-heading: 'Space Grotesk', -apple-system, sans-serif;
+  --font-body: 'Inter', -apple-system, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 25px rgba(108, 92, 231, 0.35);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+}
