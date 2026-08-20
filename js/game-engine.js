@@ -93,6 +93,53 @@ window.QVGameEngine = {
     this.socket.on('error_message', ({ message }) => {
       if (window.QVAnimations) window.QVAnimations.showToast(message, 'error');
     });
+
+    // ── MENTIMETER REALTIME EVENTS ──
+    this.socket.on('reaction_received', ({ emoji, senderNickname, x, y }) => {
+      if (window.QVAnimations && window.QVAnimations.spawnFloatingEmoji) {
+        window.QVAnimations.spawnFloatingEmoji(emoji);
+      } else {
+        window.QVGameEngine.renderFloatingEmoji(emoji);
+      }
+    });
+
+    this.socket.on('menti_data_update', (data) => {
+      if (window.QVHostPanel && window.QVHostPanel.updateMentiLiveVisuals) {
+        window.QVHostPanel.updateMentiLiveVisuals(data);
+      }
+    });
+
+    this.socket.on('results_visibility_changed', ({ visible }) => {
+      if (window.QVHostPanel) window.QVHostPanel.onResultsVisibilityChanged(visible);
+      if (window.QVPlayerGame) window.QVPlayerGame.onResultsVisibilityChanged(visible);
+    });
+
+    this.socket.on('voting_locked_status', ({ locked }) => {
+      if (window.QVPlayerGame) window.QVPlayerGame.onVotingLockChanged(locked);
+      if (window.QVHostPanel) window.QVHostPanel.onVotingLockChanged(locked);
+    });
+
+    // ── MID-GAME LEADERBOARD BROADCAST ──
+    this.socket.on('leaderboard_show', (data) => {
+      if (window.QVPlayerGame) window.QVPlayerGame.onLeaderboardShow(data);
+      if (window.QVHostPanel) window.QVHostPanel.onLeaderboardShow(data);
+    });
+  },
+
+  renderFloatingEmoji(emoji) {
+    let container = document.getElementById('floating-reactions-box');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'floating-reactions-box';
+      container.className = 'floating-reactions-container';
+      document.body.appendChild(container);
+    }
+    const el = document.createElement('div');
+    el.className = 'floating-emoji';
+    el.textContent = emoji || '❤️';
+    el.style.left = `${Math.floor(Math.random() * 80)}px`;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 2900);
   },
 
   // Host Action: Create Game Room
@@ -132,20 +179,64 @@ window.QVGameEngine = {
     }
   },
 
-  // Player Action: Submit Answer with option switch signal telemetry
-  submitAnswer(optionIndex, timeTakenMs, answerSwitches = 0, switchTimestamps = []) {
+  // Host Action: Show Mid-Game Leaderboard to All Players
+  showLeaderboard() {
+    if (this.socket && this.roomCode) {
+      this.socket.emit('show_leaderboard', { roomCode: this.roomCode });
+    }
+  },
+
+  // Host Action: Toggle Live Results Visibility
+  toggleResultsVisibility(visible) {
+    if (this.socket && this.roomCode) {
+      this.socket.emit('toggle_results_visibility', { roomCode: this.roomCode, visible });
+    }
+  },
+
+  // Host Action: Lock / Unlock Voting
+  toggleLockVoting(locked) {
+    if (this.socket && this.roomCode) {
+      this.socket.emit('toggle_lock_voting', { roomCode: this.roomCode, locked });
+    }
+  },
+
+  // Audience Action: Send Live Reaction Emoji
+  sendReaction(emoji) {
     if (this.socket && this.roomCode) {
       const user = window.QVData ? window.QVData.user : null;
+      this.socket.emit('send_reaction', {
+        roomCode: this.roomCode,
+        emoji,
+        senderNickname: user ? user.name : 'Attendee'
+      });
+      this.renderFloatingEmoji(emoji);
+    }
+  },
+
+  // Player Action: Generic Mentimeter Multi-type Submission
+  submitMentiResponse(payload) {
+    if (this.socket && this.roomCode) {
+      const user = window.QVData ? window.QVData.user : null;
+      const timeTakenMs = payload.timeTakenMs || Math.max(100, Date.now() - (this.questionStartTimeMs || Date.now()));
       this.socket.emit('submit_answer', {
         roomCode: this.roomCode,
-        optionIndex,
+        ...payload,
         timeRemaining: this.timerRemaining,
-        timeTakenMs: timeTakenMs || (Date.now() - (this.questionStartTimeMs || Date.now())),
-        answerSwitches,
-        switchTimestamps,
+        timeTakenMs,
         studentId: user ? user.id : null,
         nickname: user ? user.name : 'Student'
       });
     }
+  },
+
+  // Player Action: Submit Answer with option switch signal telemetry
+  submitAnswer(optionIndex, timeTakenMs, answerSwitches = 0, switchTimestamps = []) {
+    this.submitMentiResponse({
+      optionIndex,
+      timeTakenMs,
+      answerSwitches,
+      switchTimestamps
+    });
   }
 };
+

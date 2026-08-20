@@ -83,8 +83,17 @@ window.QVData = {
     }
   },
 
-  // Fetch quizzes list from backend API
-  async fetchQuizzes() {
+  // Fetch quizzes list from backend API with instant cache return
+  async fetchQuizzes(forceRefresh = false) {
+    if (!forceRefresh && this.quizzes && this.quizzes.length > 0) {
+      // Return cached instantly and revalidate in background
+      this.revalidateQuizzes();
+      return this.quizzes;
+    }
+    return this.revalidateQuizzes();
+  },
+
+  async revalidateQuizzes() {
     try {
       const res = await fetch('/api/quizzes');
       const data = await res.json();
@@ -95,7 +104,7 @@ window.QVData = {
     } catch (e) {
       console.warn('Error fetching quizzes:', e.message);
     }
-    return this.quizzes;
+    return this.quizzes || [];
   },
 
   // Delete quiz by ID
@@ -113,8 +122,16 @@ window.QVData = {
     return false;
   },
 
-  // Fetch classrooms list
-  async fetchClassrooms() {
+  // Fetch classrooms list with instant cache
+  async fetchClassrooms(forceRefresh = false) {
+    if (!forceRefresh && this.classrooms && this.classrooms.length > 0) {
+      this.revalidateClassrooms();
+      return this.classrooms;
+    }
+    return this.revalidateClassrooms();
+  },
+
+  async revalidateClassrooms() {
     try {
       const res = await fetch('/api/classrooms');
       const data = await res.json();
@@ -125,7 +142,7 @@ window.QVData = {
     } catch (e) {
       console.warn('Error fetching classrooms:', e.message);
     }
-    return this.classrooms;
+    return this.classrooms || [];
   },
 
   // Create classroom

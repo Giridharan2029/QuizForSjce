@@ -109,10 +109,10 @@ window.QVQuizBuilderPage = {
             <input type="file" id="file-input" style="display: none;" accept=".pdf,.docx,.doc,.ppt,.pptx,.txt" onchange="QVQuizBuilderPage.handleFileSelect(event)">
           </div>
 
-          <!-- Number of Questions Selector (as specified in handwritten notes!) -->
+          <!-- Question Types Selector for AI Generation -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; background: rgba(255,255,255,0.03); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
             <div class="input-group">
-              <label class="input-label" style="font-weight: 700; color: #fff;">Number of Questions Host Wants to Generate</label>
+              <label class="input-label" style="font-weight: 700; color: #fff;">Number of Questions to Generate</label>
               <div style="display: flex; align-items: center; gap: 1rem;">
                 <input type="range" id="file-q-count-slider" min="3" max="20" step="1" value="5" class="input" style="flex: 1;" oninput="document.getElementById('file-q-count-val').textContent = this.value">
                 <span id="file-q-count-val" class="text-cyan font-bold" style="font-size: 1.25rem; min-width: 40px; text-align: center;">5</span> Qs
@@ -120,13 +120,22 @@ window.QVQuizBuilderPage = {
             </div>
 
             <div class="input-group">
-              <label class="input-label" style="font-weight: 700; color: #fff;">Question Types</label>
-              <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                  <input type="checkbox" id="chk-mcq" checked> Multiple Choice (MCQ)
+              <label class="input-label" style="font-weight: 700; color: #fff;">Question / Slide Formats</label>
+              <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                  <input type="checkbox" id="chk-mcq" checked> 📊 MCQ
                 </label>
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                  <input type="checkbox" id="chk-tf" checked> True / False
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                  <input type="checkbox" id="chk-tf" checked> ⚖️ True/False
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                  <input type="checkbox" id="chk-wc" checked> ☁️ Word Cloud
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                  <input type="checkbox" id="chk-poll" checked> 🗳️ Poll
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+                  <input type="checkbox" id="chk-rate" checked> ⭐ Rating
                 </label>
               </div>
             </div>
@@ -143,10 +152,10 @@ window.QVQuizBuilderPage = {
           <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700;">Generate Quiz from Topic Prompt</h3>
           <div class="input-group">
             <label class="input-label">Topic or Subject</label>
-            <input type="text" id="ai-topic-input" class="input" placeholder="e.g. Quantum Physics, Solar System, JavaScript ES6">
+            <input type="text" id="ai-topic-input" class="input" placeholder="e.g. Quantum Physics, Agile Leadership, Environmental Science">
           </div>
-          <div style="display: flex; gap: 1rem; align-items: center;">
-            <div class="input-group" style="flex: 1;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: center;">
+            <div class="input-group">
               <label class="input-label">Number of Questions</label>
               <select id="ai-topic-count" class="input">
                 <option value="3">3 Questions</option>
@@ -154,16 +163,32 @@ window.QVQuizBuilderPage = {
                 <option value="10">10 Questions</option>
               </select>
             </div>
-            <button class="btn btn-primary btn-lg" style="margin-top: 1.4rem;" onclick="QVQuizBuilderPage.generateFromTopicAI()">
-              ⚡ Generate with AI
-            </button>
+            <div class="input-group">
+              <label class="input-label">Primary Slide Focus</label>
+              <select id="ai-topic-format" class="input">
+                <option value="mixed" selected>Mixed (MCQ + Word Cloud + Poll + Rating)</option>
+                <option value="mcq">Standard Quiz (MCQ & True/False)</option>
+                <option value="interactive">Interactive Workshop (Word Cloud & Polls)</option>
+              </select>
+            </div>
           </div>
+          <button class="btn btn-primary btn-lg" onclick="QVQuizBuilderPage.generateFromTopicAI()">
+            ⚡ Generate Multi-Format Mentimeter Quiz with AI
+          </button>
         </div>
       `;
     } else {
       return `
-        <div class="card">
-          <p class="text-secondary">Use the question editor below to manually construct your custom quiz questions and options.</p>
+        <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
+          <p class="text-secondary">Click the buttons below to add any Mentimeter slide type to your quiz presentation.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="QVQuizBuilderPage.addQuestionWithType('mcq')">📊 + Multiple Choice</button>
+            <button class="btn btn-secondary" onclick="QVQuizBuilderPage.addQuestionWithType('word_cloud')">☁️ + Word Cloud</button>
+            <button class="btn btn-secondary" onclick="QVQuizBuilderPage.addQuestionWithType('poll')">🗳️ + Live Poll / Vote</button>
+            <button class="btn btn-secondary" onclick="QVQuizBuilderPage.addQuestionWithType('rating_scale')">⭐ + Rating Scale</button>
+            <button class="btn btn-secondary" onclick="QVQuizBuilderPage.addQuestionWithType('ranking')">🔢 + Ranking / Order</button>
+            <button class="btn btn-secondary" onclick="QVQuizBuilderPage.addQuestionWithType('open_ended')">💬 + Open Q&A</button>
+          </div>
         </div>
       `;
     }
@@ -203,12 +228,19 @@ window.QVQuizBuilderPage = {
     }
 
     const count = parseInt(document.getElementById('file-q-count-slider').value || '5', 10);
+    const types = [];
+    if (document.getElementById('chk-mcq')?.checked) types.push('mcq');
+    if (document.getElementById('chk-tf')?.checked) types.push('true_false');
+    if (document.getElementById('chk-wc')?.checked) types.push('word_cloud');
+    if (document.getElementById('chk-poll')?.checked) types.push('poll');
+    if (document.getElementById('chk-rate')?.checked) types.push('rating_scale');
+
     const btn = document.getElementById('btn-generate-file-ai');
     btn.disabled = true;
     btn.textContent = '⏳ AI is analyzing file & generating questions...';
 
     try {
-      const result = await window.QVAI.generateFromFile(this.selectedFile, count);
+      const result = await window.QVAI.generateFromFile(this.selectedFile, count, types.join(','));
       this.questions = result.questions || [];
 
       document.getElementById('builder-quiz-title').value = result.title || `Quiz: ${this.selectedFile.name.replace(/\.[^/.]+$/, "")}`;
@@ -232,12 +264,13 @@ window.QVQuizBuilderPage = {
       return;
     }
     const count = parseInt(document.getElementById('ai-topic-count').value || '5', 10);
+    const format = document.getElementById('ai-topic-format')?.value || 'mixed';
     
     try {
-      if (window.QVAnimations) window.QVAnimations.showToast('Generating AI quiz...', 'info');
-      const quiz = await window.QVAI.generateTopicQuiz(topic, count);
+      if (window.QVAnimations) window.QVAnimations.showToast('Generating AI Mentimeter presentation quiz...', 'info');
+      const quiz = await window.QVAI.generateTopicQuiz(topic, count, 'Medium', format);
       this.questions = quiz.questions || [];
-      document.getElementById('builder-quiz-title').value = quiz.title || `${topic} Quiz`;
+      document.getElementById('builder-quiz-title').value = quiz.title || `${topic} Interactive Deck`;
       document.getElementById('questions-editor-list').innerHTML = this.renderQuestionsList();
       document.getElementById('q-count-badge').textContent = this.questions.length;
     } catch (e) {
@@ -249,43 +282,106 @@ window.QVQuizBuilderPage = {
     if (this.questions.length === 0) {
       return `
         <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
-          No questions generated or added yet. Upload a file above or click "Add Question".
+          No questions generated or added yet. Upload a file above or click "+ Add Question".
         </div>
       `;
     }
 
-    return this.questions.map((q, idx) => `
-      <div style="background: rgba(10, 14, 26, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-family: var(--font-heading); font-weight: 700; color: var(--accent-cyan);">Question ${idx + 1}</span>
-          <button class="btn btn-danger" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="QVQuizBuilderPage.removeQuestion(${idx})">Remove</button>
-        </div>
+    return this.questions.map((q, idx) => {
+      const type = q.type || 'mcq';
+      const typeLabels = {
+        mcq: '📊 Multiple Choice',
+        true_false: '⚖️ True / False',
+        word_cloud: '☁️ Word Cloud',
+        poll: '🗳️ Live Poll',
+        rating_scale: '⭐ Rating Scale',
+        ranking: '🔢 Ranking / Prioritization',
+        open_ended: '💬 Open-ended Q&A'
+      };
 
-        <input type="text" class="input" value="${(q.text || '').replace(/"/g, '&quot;')}" onchange="QVQuizBuilderPage.questions[${idx}].text = this.value">
+      let typeBody = '';
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-          ${(q.options || ['Option A', 'Option B', 'Option C', 'Option D']).map((opt, optIdx) => `
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <input type="radio" name="correct_${idx}" ${q.correct === optIdx ? 'checked' : ''} onchange="QVQuizBuilderPage.questions[${idx}].correct = ${optIdx}">
-              <input type="text" class="input" value="${(opt || '').replace(/"/g, '&quot;')}" onchange="QVQuizBuilderPage.questions[${idx}].options[${optIdx}] = this.value" style="font-size: 0.9rem;">
+      if (type === 'mcq' || type === 'poll') {
+        typeBody = `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            ${(q.options || ['Option A', 'Option B', 'Option C', 'Option D']).map((opt, optIdx) => `
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                ${type === 'mcq' ? `<input type="radio" name="correct_${idx}" ${q.correct === optIdx ? 'checked' : ''} onchange="QVQuizBuilderPage.questions[${idx}].correct = ${optIdx}">` : '<span style="color:var(--text-secondary);">🗳️</span>'}
+                <input type="text" class="input" value="${(opt || '').replace(/"/g, '&quot;')}" onchange="QVQuizBuilderPage.questions[${idx}].options[${optIdx}] = this.value" style="font-size: 0.9rem;">
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (type === 'word_cloud') {
+        typeBody = `
+          <div style="background: rgba(0, 206, 201, 0.06); border: 1px dashed var(--accent-cyan); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--accent-cyan);">
+            ☁️ Audience will submit free-form keywords and live tags. Word frequency will scale dynamically on presentation screen.
+          </div>
+        `;
+      } else if (type === 'rating_scale') {
+        typeBody = `
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <span class="text-secondary" style="font-size: 0.85rem;">Scale: 1 to 5 Stars</span>
+            <input type="text" class="input" placeholder="Optional rating metric name (e.g. Confidence, Relevance, Clarity)" value="${(q.metricName || '').replace(/"/g, '&quot;')}" onchange="QVQuizBuilderPage.questions[${idx}].metricName = this.value" style="flex: 1; font-size: 0.85rem;">
+          </div>
+        `;
+      } else if (type === 'ranking') {
+        typeBody = `
+          <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+            <span class="text-secondary" style="font-size: 0.8rem;">Items for audience to rank in priority order:</span>
+            ${(q.options || ['Priority 1', 'Priority 2', 'Priority 3']).map((opt, optIdx) => `
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="text-cyan font-bold" style="font-size: 0.85rem; width: 20px;">${optIdx + 1}.</span>
+                <input type="text" class="input" value="${(opt || '').replace(/"/g, '&quot;')}" onchange="QVQuizBuilderPage.questions[${idx}].options[${optIdx}] = this.value" style="font-size: 0.85rem;">
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (type === 'open_ended') {
+        typeBody = `
+          <div style="background: rgba(108, 92, 231, 0.06); border: 1px dashed var(--accent-primary); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; color: #a29bfe;">
+            💬 Audience will submit long-form responses that appear in realtime on the presentation question wall.
+          </div>
+        `;
+      }
+
+      return `
+        <div style="background: rgba(10, 14, 26, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-family: var(--font-heading); font-weight: 700; color: var(--accent-cyan);">Question ${idx + 1}</span>
+              <span class="level-badge" style="font-size: 0.75rem;">${typeLabels[type] || type}</span>
             </div>
-          `).join('')}
+            <button class="btn btn-danger" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="QVQuizBuilderPage.removeQuestion(${idx})">Remove</button>
+          </div>
+
+          <input type="text" class="input" placeholder="Enter question or presentation prompt..." value="${(q.text || '').replace(/"/g, '&quot;')}" onchange="QVQuizBuilderPage.questions[${idx}].text = this.value">
+
+          ${typeBody}
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   },
 
   addBlankQuestion() {
-    this.questions.push({
-      text: 'New Question Text?',
-      type: 'mcq',
-      options: ['Option A', 'Option B', 'Option C', 'Option D'],
-      correct: 0,
-      points: 1000
-    });
+    this.addQuestionWithType('mcq');
+  },
+
+  addQuestionWithType(type = 'mcq') {
+    const defaultData = {
+      mcq: { text: 'New Multiple Choice Question?', type: 'mcq', options: ['Option A', 'Option B', 'Option C', 'Option D'], correct: 0, points: 1000 },
+      word_cloud: { text: 'In one word, describe your thoughts on this topic:', type: 'word_cloud', options: [], points: 500 },
+      poll: { text: 'Live Audience Poll: Which strategy do you prefer?', type: 'poll', options: ['Strategy A', 'Strategy B', 'Strategy C', 'Neutral'], points: 0 },
+      rating_scale: { text: 'Rate your confidence / agreement with this statement (1-5):', type: 'rating_scale', options: [], metricName: 'Satisfaction', points: 500 },
+      ranking: { text: 'Rank these priorities from most to least important:', type: 'ranking', options: ['Security & Privacy', 'Speed & Performance', 'Feature Richness', 'Ease of Use'], points: 1000 },
+      open_ended: { text: 'Q&A: What questions or ideas do you have?', type: 'open_ended', options: [], points: 500 }
+    };
+
+    this.questions.push(defaultData[type] || defaultData.mcq);
     document.getElementById('questions-editor-list').innerHTML = this.renderQuestionsList();
     document.getElementById('q-count-badge').textContent = this.questions.length;
   },
+
 
   removeQuestion(idx) {
     this.questions.splice(idx, 1);

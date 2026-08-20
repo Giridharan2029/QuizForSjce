@@ -125,24 +125,34 @@ function startQuestionTimer(room) {
 function sendQuestion(room) {
   const q = room.quiz.questions[room.currentQuestionIndex];
   room.answers.clear();
+  room.mentiData = {
+    wordFrequencies: {},
+    ratingSum: 0,
+    ratingsCount: 0,
+    openEndedResponses: [],
+    rankingScores: {}
+  };
+  room.votingLocked = false;
 
   const durationSec = q.timeLimit || room.quiz.timeLimit || 20;
   room.questionStartTimeMs = Date.now();
   room.endTimeMs = Date.now() + (durationSec * 1000);
 
-  console.log(`❓ Sending question ${room.currentQuestionIndex + 1}/${room.quiz.questions.length} to room ${room.code}: "${q.text}"`);
+  const qType = q.type || 'mcq';
+  console.log(`❓ Sending question ${room.currentQuestionIndex + 1}/${room.quiz.questions.length} [${qType}] to room ${room.code}: "${q.text}"`);
 
   io.to(room.code).emit('question_show', {
     roomCode: room.code,
     questionIndex: room.currentQuestionIndex,
     totalQuestions: room.quiz.questions.length,
     questionText: q.text,
-    options: q.options,
+    options: q.options || [],
     timeLimit: durationSec,
     endTimeMs: room.endTimeMs,
     questionStartTimeMs: room.questionStartTimeMs,
     topic: q.topic || room.quiz.category || 'General',
-    type: 'mcq'
+    type: qType,
+    metricName: q.metricName || 'Satisfaction'
   });
 
   startQuestionTimer(room);
@@ -159,10 +169,10 @@ function endQuestion(room) {
   const q = room.quiz.questions[room.currentQuestionIndex];
   const leaderboard = Array.from(room.players.values()).sort((a, b) => b.score - a.score);
 
-  // Calculate live host statistics: Correct Count, Wrong Count, Option Counts
+  // Calculate live host statistics
   let correctCount = 0;
   let wrongCount = 0;
-  const optionCounts = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  const optionCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
   if (room.answers) {
     room.answers.forEach((ans) => {
@@ -177,28 +187,41 @@ function endQuestion(room) {
     });
   }
 
-  const totalAnswered = correctCount + wrongCount;
+  const totalAnswered = room.answers.size;
 
-  console.log(`🏁 Question ${room.currentQuestionIndex + 1} finished in room ${room.code} (Correct: ${correctCount}, Wrong: ${wrongCount})`);
+  console.log(`🏁 Question ${room.currentQuestionIndex + 1} finished in room ${room.code} (${totalAnswered} total responses)`);
 
-  // GUARDRAIL: Students receive strictly neutral completion signal (correct answer is NOT revealed during test)
+  // Broadcast completion signal
   io.to(room.code).emit('question_end', {
-    message: 'Question Finished ✓',
-    questionIndex: room.currentQuestionIndex
+    message: 'Slide Finished ✓',
+    questionIndex: room.currentQuestionIndex,
+    type: q.type || 'mcq'
   });
 
-  // Host receives complete analysis: total answered, correct count, wrong count, option counts, correct text
+  // Calculate ranked items sorted by score
+  const rankedItems = (q.options || []).map(opt => ({
+    text: opt,
+    score: (room.mentiData && room.mentiData.rankingScores && room.mentiData.rankingScores[opt]) || 0
+  })).sort((a, b) => b.score - a.score);
+
+  // Host receives complete analysis
   if (room.hostSocketId) {
     io.to(room.hostSocketId).emit('host_question_end', {
+      type: q.type || 'mcq',
       questionText: q.text,
       correctOption: q.correct,
-      correctOptionText: q.options[q.correct],
+      correctOptionText: (q.options && q.correct !== undefined) ? q.options[q.correct] : '',
       explanation: q.explanation || '',
       correctCount,
       wrongCount,
       totalAnswered,
       optionCounts,
-      options: q.options,
+      options: q.options || [],
+      wordFrequencies: room.mentiData?.wordFrequencies || {},
+      avgRating: room.mentiData?.ratingsCount ? (room.mentiData.ratingSum / room.mentiData.ratingsCount) : 0,
+      ratingsCount: room.mentiData?.ratingsCount || 0,
+      openEndedResponses: room.mentiData?.openEndedResponses || [],
+      rankedItems,
       leaderboard
     });
   }
@@ -484,8 +507,8 @@ app.post('/api/ai/generate-from-file', upload.single('document'), async (req, re
     const textSnippet = extractedText.slice(0, 5000);
 
     const prompt = `
-You are an expert Gamified Quiz Engine. Analyze the following document text and generate exactly ${count} high quality questions.
-Allowed Question Types requested: ${qTypes}.
+You are an expert Gamified Quiz and Mentimeter Presentation Engine. Analyze the following document text and generate exactly ${count} high quality questions/slides.
+Allowed Question / Slide Types requested: ${qTypes}.
 
 Document Text Snippet:
 """
@@ -493,13 +516,17 @@ ${textSnippet}
 """
 
 Instructions:
-1. Generate exactly ${count} questions directly based on the content above.
+1. Generate exactly ${count} interactive questions/slides directly based on the content above.
 2. Supported types:
    - "mcq": 4 options, "correct" index (0-3).
    - "true_false": 2 options ["True", "False"], "correct" index (0 or 1).
+   - "word_cloud": free-form audience word prompt (options: []).
+   - "poll": opinion poll with 3-4 distinct perspectives.
+   - "rating_scale": rating prompt (1-5 stars) with metricName.
+   - "ranking": 3-4 priority elements for students to arrange.
 3. Return STRICT VALID JSON ONLY in this format:
 {
-  "title": "Quiz on ${file.originalname.replace(/\.[^/.]+$/, "")}",
+  "title": "Interactive Deck: ${file.originalname.replace(/\.[^/.]+$/, "")}",
   "category": "Document Analysis",
   "questions": [
     {
@@ -529,14 +556,15 @@ Instructions:
     }
 
     if (!responseText) {
-      // Dynamic fallback generator matching exact count requested by host
+      // Dynamic fallback generator matching exact count and requested formats
       const baseName = file.originalname.replace(/\.[^/.]+$/, "");
       const fallbackQuestions = [];
       const topics = ['Core Objective', 'Key Terminology', 'Main Principles', 'Implementation Steps', 'Best Practices', 'System Architecture', 'Methodology', 'Future Outlook', 'Case Study Findings', 'Evaluation Criteria'];
       
       for (let i = 0; i < count; i++) {
         const topic = topics[i % topics.length];
-        if (i % 2 === 0) {
+        const step = i % 4;
+        if (step === 0) {
           fallbackQuestions.push({
             text: `[${baseName}] Question ${i+1}: What is the primary significance of ${topic} discussed in the document?`,
             type: 'mcq',
@@ -548,6 +576,21 @@ Instructions:
             ],
             correct: 0,
             explanation: `Extracted from the ${topic} section of ${file.originalname}.`
+          });
+        } else if (step === 1 && qTypes.includes('word_cloud')) {
+          fallbackQuestions.push({
+            text: `[${baseName}] In one word, describe what ${topic} represents in this document:`,
+            type: 'word_cloud',
+            options: [],
+            points: 500
+          });
+        } else if (step === 2 && qTypes.includes('rating_scale')) {
+          fallbackQuestions.push({
+            text: `[${baseName}] Rate the overall impact and importance of ${topic} (1-5 Stars):`,
+            type: 'rating_scale',
+            metricName: 'Impact',
+            options: [],
+            points: 500
           });
         } else {
           fallbackQuestions.push({
@@ -831,11 +874,63 @@ io.on('connection', (socket) => {
       });
     }
   });
+  // ── HOST ACTION: SHOW MID-GAME LEADERBOARD TO ALL PLAYERS ──
+  socket.on('show_leaderboard', ({ roomCode }) => {
+    const targetCode = (roomCode || '').toUpperCase();
+    const room = activeRooms.get(targetCode);
+    if (room) {
+      const leaderboard = Array.from(room.players.values())
+        .map(p => ({ nickname: p.nickname, score: p.score, streak: p.streak, color: p.color }))
+        .sort((a, b) => b.score - a.score);
+      console.log(`📊 Host showing mid-game leaderboard in room ${room.code} (${leaderboard.length} players)`);
+      io.to(room.code).emit('leaderboard_show', {
+        leaderboard,
+        questionIndex: room.currentQuestionIndex,
+        totalQuestions: room.quiz.questions.length
+      });
+    }
+  });
 
-  socket.on('submit_answer', ({ roomCode, optionIndex, timeRemaining, timeTakenMs, answerSwitches = 0, switchTimestamps = [], confidenceRating = null, studentId, nickname }) => {
+  // ── MENTIMETER HOST PRESENTATION CONTROLS ──
+  socket.on('toggle_results_visibility', ({ roomCode, visible }) => {
+    const targetCode = (roomCode || '').toUpperCase();
+    const room = activeRooms.get(targetCode);
+    if (room) {
+      room.resultsVisible = visible;
+      io.to(room.code).emit('results_visibility_changed', { visible });
+    }
+  });
+
+  socket.on('toggle_lock_voting', ({ roomCode, locked }) => {
+    const targetCode = (roomCode || '').toUpperCase();
+    const room = activeRooms.get(targetCode);
+    if (room) {
+      room.votingLocked = locked;
+      io.to(room.code).emit('voting_locked_status', { locked });
+    }
+  });
+
+  // ── AUDIENCE FLOATING REACTIONS BROADCAST ──
+  socket.on('send_reaction', ({ roomCode, emoji, senderNickname }) => {
+    const targetCode = (roomCode || '').toUpperCase();
+    const room = activeRooms.get(targetCode);
+    if (room) {
+      io.to(room.code).emit('reaction_received', {
+        emoji: emoji || '❤️',
+        senderNickname: senderNickname || 'Attendee',
+        timestamp: Date.now()
+      });
+    }
+  });
+
+  // ── MULTI-FORMAT SLIDE ANSWER SUBMISSION ──
+  socket.on('submit_answer', ({ roomCode, optionIndex, word, rating, rankingOrder, openEndedText, timeRemaining, timeTakenMs, answerSwitches = 0, switchTimestamps = [], confidenceRating = null, studentId, nickname }) => {
     const targetCode = (roomCode || '').toUpperCase();
     let room = activeRooms.get(targetCode);
     if (!room || room.status !== 'active') return;
+
+    // Reject if voting is currently locked by host
+    if (room.votingLocked) return;
 
     // Reject late answers (timer already expired)
     if (room.timeRemaining !== undefined && room.timeRemaining <= 0) return;
@@ -844,12 +939,39 @@ io.on('connection', (socket) => {
     if (room.answers.has(socket.id)) return;
 
     const currentQ = room.quiz.questions[room.currentQuestionIndex];
+    const qType = currentQ.type || 'mcq';
     const isCorrect = optionIndex === currentQ.correct;
     const topic = currentQ.topic || room.quiz.category || 'General';
 
     const actualTimeTakenMs = timeTakenMs || Math.max(100, Date.now() - (room.questionStartTimeMs || Date.now()));
     const effectiveStudentId = studentId || socket.id;
     const effectiveName = nickname || (room.players.get(socket.id)?.nickname) || 'Student';
+
+    if (!room.mentiData) {
+      room.mentiData = { wordFrequencies: {}, ratingSum: 0, ratingsCount: 0, openEndedResponses: [], rankingScores: {} };
+    }
+
+    // Process Mentimeter format specific aggregation
+    if (qType === 'word_cloud' && word) {
+      const cleanWord = word.trim();
+      const lowerKey = cleanWord.toLowerCase();
+      room.mentiData.wordFrequencies[cleanWord] = (room.mentiData.wordFrequencies[cleanWord] || 0) + 1;
+    } else if (qType === 'rating_scale' && rating) {
+      const numericRating = Math.max(1, Math.min(5, parseInt(rating, 10)));
+      room.mentiData.ratingSum += numericRating;
+      room.mentiData.ratingsCount += 1;
+    } else if (qType === 'ranking' && Array.isArray(rankingOrder)) {
+      rankingOrder.forEach((item, pos) => {
+        const weight = Math.max(1, rankingOrder.length - pos);
+        room.mentiData.rankingScores[item] = (room.mentiData.rankingScores[item] || 0) + weight;
+      });
+    } else if (qType === 'open_ended' && openEndedText) {
+      room.mentiData.openEndedResponses.unshift({
+        text: openEndedText.trim(),
+        nickname: effectiveName,
+        timestamp: Date.now()
+      });
+    }
 
     // Fetch running topic stat history
     let topicStat = db.prepare('SELECT * FROM topic_stats WHERE student_id = ? AND topic = ?').get(effectiveStudentId, topic);
@@ -893,7 +1015,7 @@ io.on('connection', (socket) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       respId, effectiveStudentId, effectiveName, currentQ.id || ('q_' + room.currentQuestionIndex),
-      topic, room.quiz.id, room.code, optionIndex, isCorrect ? 1 : 0, actualTimeTakenMs,
+      topic, room.quiz.id, room.code, optionIndex !== undefined ? optionIndex : null, isCorrect ? 1 : 0, actualTimeTakenMs,
       answerSwitches, JSON.stringify(switchTimestamps || []), confidenceRating || null,
       scored.guessProbability, scored.label
     );
@@ -916,28 +1038,56 @@ io.on('connection', (socket) => {
 
     const player = room.players.get(socket.id);
     if (player) {
+      const questionTimeLimitMs = (currentQ.timeLimit || 20) * 1000;
       if (isCorrect) {
+        // ── SPEED-BASED SCORING: Faster correct answers earn significantly more points ──
+        // speedRatio ranges from 1.0 (instant) down to ~0.0 (at time limit)
+        const speedRatio = Math.max(0, 1 - (actualTimeTakenMs / questionTimeLimitMs));
+        // Base points for correctness + large speed bonus
+        const basePoints = currentQ.points || 1000;
+        const speedBonus = Math.round(speedRatio * basePoints); // up to 1000 extra for instant answer
+        const streakBonus = Math.min(player.streak, 5) * 50; // up to 250 bonus for 5-streak
+        const totalPoints = basePoints + speedBonus + streakBonus;
+
+        player.score += totalPoints;
         player.streak += 1;
-        const timeBonus = Math.round(((timeRemaining || 15) / (currentQ.timeLimit || 20)) * 500);
-        player.score += ((currentQ.points || 1000) + timeBonus);
       } else {
+        // WRONG answer: zero points, streak resets
         player.streak = 0;
       }
     }
 
-    room.answers.set(socket.id, { optionIndex, isCorrect });
+    room.answers.set(socket.id, { optionIndex, word, rating, rankingOrder, openEndedText, isCorrect });
 
     // Calculate per-option counts
-    const optionCounts = [0, 0, 0, 0];
+    const optionCounts = [0, 0, 0, 0, 0, 0];
     room.answers.forEach(a => {
-      if (a.optionIndex >= 0 && a.optionIndex < 4) optionCounts[a.optionIndex]++;
+      if (a.optionIndex >= 0 && a.optionIndex < 6) optionCounts[a.optionIndex]++;
     });
 
-    // GUARDRAIL: Student socket emission contains ONLY public counts (NO guess_probability or label)
+    // Broadcast realtime update to audience
     io.to(room.code).emit('answer_count_update', {
       answered: room.answers.size,
       total: room.players.size,
       optionCounts
+    });
+
+    // Realtime live visual update emitted to host presentation
+    const rankedItems = (currentQ.options || []).map(opt => ({
+      text: opt,
+      score: (room.mentiData && room.mentiData.rankingScores && room.mentiData.rankingScores[opt]) || 0
+    })).sort((a, b) => b.score - a.score);
+
+    io.to(room.code).emit('menti_data_update', {
+      type: qType,
+      options: currentQ.options || [],
+      optionCounts,
+      totalVotes: room.answers.size,
+      wordFrequencies: room.mentiData.wordFrequencies,
+      avgRating: room.mentiData.ratingsCount ? (room.mentiData.ratingSum / room.mentiData.ratingsCount) : 0,
+      ratingsCount: room.mentiData.ratingsCount,
+      openEndedResponses: room.mentiData.openEndedResponses,
+      rankedItems
     });
 
     // Direct Host-Only signal update
@@ -1112,35 +1262,33 @@ app.post('/api/auth/login', async (req, res) => {
 // ── PRODUCTION SUPABASE / SQLITE API ENDPOINTS ─────────
 
 app.get('/api/quizzes', async (req, res) => {
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('quizzes').select('*').order('created_at', { ascending: false });
-      if (data && !error) return res.json({ success: true, quizzes: data });
-    } catch (e) {
-      console.warn('Supabase read error:', e.message);
-    }
+  // Ultra-fast Local SQLite fetch
+  try {
+    const rows = db.prepare('SELECT * FROM quizzes ORDER BY created_at DESC').all();
+    const quizzes = rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      category: r.category,
+      difficulty: r.difficulty,
+      timeLimit: r.time_limit,
+      thumbnail: r.thumbnail,
+      questions: typeof r.questions_json === 'string' ? JSON.parse(r.questions_json) : r.questions_json
+    }));
+    return res.json({ success: true, quizzes });
+  } catch (e) {
+    console.error('Quiz fetch error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
   }
-
-  const rows = db.prepare('SELECT * FROM quizzes ORDER BY created_at DESC').all();
-  const quizzes = rows.map(r => ({
-    id: r.id,
-    title: r.title,
-    category: r.category,
-    difficulty: r.difficulty,
-    timeLimit: r.time_limit,
-    thumbnail: r.thumbnail,
-    questions: JSON.parse(r.questions_json)
-  }));
-  res.json({ success: true, quizzes });
 });
+
 
 // Gemini AI Quiz Generator API
 app.post('/api/ai/generate-quiz', async (req, res) => {
   try {
-    const { prompt, topic, count = 5, difficulty = 'Medium' } = req.body;
+    const { prompt, topic, count = 5, difficulty = 'Medium', format = 'mixed' } = req.body;
     const topicName = topic || prompt || 'General Knowledge';
 
-    console.log(`🤖 Generating AI Quiz with Gemini for topic: "${topicName}"`);
+    console.log(`🤖 Generating AI Quiz with Gemini for topic: "${topicName}" (${format} format)`);
 
     let responseText = '';
     const modelNames = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest'];
@@ -1151,21 +1299,43 @@ app.post('/api/ai/generate-quiz', async (req, res) => {
         try {
           const model = genAI.getGenerativeModel({ model: mName });
           const systemPrompt = `
-You are an expert Gamified Quiz Engine. Generate a ${count}-question multiple-choice quiz about "${topicName}" with difficulty level "${difficulty}".
+You are an expert interactive presentation & Mentimeter quiz creator.
+Generate a ${count}-question multi-slide interactive deck about "${topicName}".
+Slide types allowed: "mcq", "word_cloud", "poll", "rating_scale", "ranking", "open_ended".
 
 Output MUST be strictly valid raw JSON matching this structure:
 {
-  "title": "${topicName} AI Quiz",
-  "category": "AI Generated",
+  "title": "${topicName} Interactive Deck",
+  "category": "Interactive Presentation",
   "difficulty": "${difficulty}",
   "timeLimit": 20,
   "questions": [
     {
-      "text": "Question text here?",
+      "text": "Core Multiple Choice Question on ${topicName}?",
+      "type": "mcq",
       "options": ["Option A", "Option B", "Option C", "Option D"],
       "correct": 0,
       "points": 1000,
       "explanation": "Detailed explanation."
+    },
+    {
+      "text": "In one word, what comes to mind when you think of ${topicName}?",
+      "type": "word_cloud",
+      "options": [],
+      "points": 500
+    },
+    {
+      "text": "Audience Poll: Which perspective on ${topicName} do you agree with most?",
+      "type": "poll",
+      "options": ["Approach 1", "Approach 2", "Approach 3", "Undecided"],
+      "points": 0
+    },
+    {
+      "text": "Rate your confidence level in applying ${topicName} concepts (1-5 stars):",
+      "type": "rating_scale",
+      "metricName": "Confidence",
+      "options": [],
+      "points": 500
     }
   ]
 }`;
@@ -1184,24 +1354,67 @@ Output MUST be strictly valid raw JSON matching this structure:
       const cleanedJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       quizData = JSON.parse(cleanedJson);
     } else {
-      // Smart Fallback generator for topic prompt
+      // Smart Fallback generator for interactive Mentimeter presentation deck
+      const sampleTypes = ['mcq', 'word_cloud', 'poll', 'rating_scale', 'ranking', 'open_ended'];
       quizData = {
-        title: `${topicName} Quiz`,
-        category: 'AI Generated',
+        title: `${topicName} Interactive Presentation Deck`,
+        category: 'Interactive Presentation',
         difficulty,
         timeLimit: 20,
-        questions: Array.from({ length: count }, (_, idx) => ({
-          text: `[${topicName}] Question ${idx + 1}: What is a fundamental aspect of ${topicName}?`,
-          options: [
-            `Core Principle ${idx + 1} of ${topicName}`,
-            `Secondary Component ${idx + 1}`,
-            `Unrelated Option`,
-            `Experimental Hypothesis`
-          ],
-          correct: 0,
-          points: 1000,
-          explanation: `Pertains to fundamental concepts in ${topicName}.`
-        }))
+        questions: Array.from({ length: count }, (_, idx) => {
+          const type = format === 'mixed' ? sampleTypes[idx % sampleTypes.length] : (format === 'mcq' ? 'mcq' : 'word_cloud');
+          if (type === 'word_cloud') {
+            return {
+              text: `[${topicName}] In one word, describe what ${topicName} represents to you:`,
+              type: 'word_cloud',
+              options: [],
+              points: 500
+            };
+          } else if (type === 'poll') {
+            return {
+              text: `[${topicName}] Audience Live Poll: Which method is most effective for ${topicName}?`,
+              type: 'poll',
+              options: ['Structured Framework', 'Rapid Prototyping', 'Continuous Iteration', 'Collaborative Workshops'],
+              points: 0
+            };
+          } else if (type === 'rating_scale') {
+            return {
+              text: `[${topicName}] Rate your team's readiness and satisfaction regarding ${topicName} (1-5 Stars):`,
+              type: 'rating_scale',
+              metricName: 'Readiness',
+              options: [],
+              points: 500
+            };
+          } else if (type === 'ranking') {
+            return {
+              text: `[${topicName}] Rank these key pillars of ${topicName} from top to bottom:`,
+              type: 'ranking',
+              options: ['High Performance', 'Robust Security', 'Scalability', 'Developer Experience'],
+              points: 1000
+            };
+          } else if (type === 'open_ended') {
+            return {
+              text: `[${topicName}] Q&A: What is the most critical question you have about ${topicName}?`,
+              type: 'open_ended',
+              options: [],
+              points: 500
+            };
+          } else {
+            return {
+              text: `[${topicName}] Question ${idx + 1}: What is a fundamental aspect of ${topicName}?`,
+              type: 'mcq',
+              options: [
+                `Core Principle ${idx + 1} of ${topicName}`,
+                `Secondary Component ${idx + 1}`,
+                `Unrelated Option`,
+                `Experimental Hypothesis`
+              ],
+              correct: 0,
+              points: 1000,
+              explanation: `Pertains to fundamental concepts in ${topicName}.`
+            };
+          }
+        })
       };
     }
     quizData.id = 'ai_q_' + Date.now();

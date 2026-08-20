@@ -1,12 +1,12 @@
 // ── QUIZVERSE AI QUESTION ENGINE ─────────────────────────────
 window.QVAI = {
   // Topic-based AI generation
-  async generateTopicQuiz(topic, count = 5, difficulty = 'Medium') {
+  async generateTopicQuiz(topic, count = 5, difficulty = 'Medium', format = 'mixed') {
     try {
       const res = await fetch('/api/ai/generate-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, count, difficulty })
+        body: JSON.stringify({ topic, count, difficulty, format })
       });
       const data = await res.json();
       if (data.success && data.quiz) {

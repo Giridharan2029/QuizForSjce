@@ -19,11 +19,12 @@ window.QVApp = {
           <span>QuizVerse</span>
         </a>
 
-        <div class="nav-links">
+          <div class="nav-links">
           <a class="nav-item" id="nav-landing" onclick="QVApp.navigateTo('landing')">Home</a>
           <a class="nav-item" id="nav-dashboard" onclick="QVApp.navigateTo('dashboard')">Dashboard</a>
           <a class="nav-item" id="nav-quiz-builder" onclick="QVApp.navigateTo('quiz-builder')">Create Quiz</a>
           <a class="nav-item" id="nav-classroom" onclick="QVApp.navigateTo('classroom')">Classrooms</a>
+          <a class="nav-item" id="nav-scheduled-tests" onclick="QVApp.navigateTo('scheduled-tests')">Scheduled Tests</a>
           <a class="nav-item" id="nav-leaderboard" onclick="QVApp.navigateTo('leaderboard')">Leaderboard</a>
 
           <div id="user-header-profile" class="user-level-pill" onclick="QVApp.toggleUserDropdown()">
@@ -99,6 +100,9 @@ window.QVApp = {
         break;
       case 'classroom':
         if (window.QVClassroomPage) window.QVClassroomPage.render(mainEl);
+        break;
+      case 'scheduled-tests':
+        if (window.QVScheduledTestsPage) window.QVScheduledTestsPage.render(mainEl);
         break;
       case 'host-panel':
         if (window.QVHostPanelPage) window.QVHostPanelPage.render(mainEl, params);

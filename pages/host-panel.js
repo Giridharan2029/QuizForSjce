@@ -26,14 +26,46 @@ window.QVHostPanelPage = {
           </div>
         </div>
 
+        <!-- Mentimeter Live Presentation Toolbar -->
+        <div class="menti-toolbar">
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;" id="btn-toggle-fullscreen" onclick="QVHostPanelPage.toggleFullscreen()">
+              🖥️ Fullscreen Presentation
+            </button>
+            <button class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;" id="btn-toggle-results" onclick="QVHostPanelPage.toggleResults()">
+              👁️ <span id="lbl-results-status">Hide Live Results</span>
+            </button>
+            <button class="btn btn-secondary" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;" id="btn-toggle-lock" onclick="QVHostPanelPage.toggleLockVoting()">
+              🔒 <span id="lbl-lock-status">Lock Voting</span>
+            </button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+            <span>Reactions:</span>
+            <span style="font-size: 1.1rem;">❤️ 👍 👏 🔥 🎉 💡</span>
+          </div>
+        </div>
+
         <!-- Host Action Buttons -->
-        <div style="display: flex; gap: 1rem; width: 100%;">
+        <div style="display: flex; gap: 1rem; width: 100%; flex-wrap: wrap;">
           <button class="btn btn-primary btn-lg w-full" id="host-start-btn" onclick="QVHostPanelPage.startGame()">
             🚀 Start Game Battle (+100 XP)
           </button>
           <button class="btn btn-secondary btn-lg" id="host-next-btn" style="display: none;" onclick="QVHostPanelPage.nextQuestion()">
             ⏩ Next Question
           </button>
+          <button class="btn btn-secondary btn-lg" id="host-leaderboard-btn" style="display: none; background: linear-gradient(135deg, rgba(253, 203, 110, 0.15), rgba(255, 118, 117, 0.15)); border-color: rgba(253, 203, 110, 0.4);" onclick="QVHostPanelPage.showLeaderboard()">
+            📊 Show Leaderboard
+          </button>
+        </div>
+
+        <!-- Mid-Game Leaderboard Overlay (Hidden by default) -->
+        <div id="host-leaderboard-overlay" class="card" style="display: none; width: 100%; border-color: var(--accent-amber);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800; color: var(--accent-amber);">🏆 Live Leaderboard</h3>
+            <button class="btn btn-secondary" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;" onclick="document.getElementById('host-leaderboard-overlay').style.display = 'none'">✕ Close</button>
+          </div>
+          <div id="host-leaderboard-list"></div>
         </div>
 
         <!-- Timer & Question Info -->
@@ -42,6 +74,17 @@ window.QVHostPanelPage = {
 
           <div class="question-box" id="host-question-text">
             Waiting for host to start the game...
+          </div>
+        </div>
+
+        <!-- Realtime Live Interactive Mentimeter Display Area -->
+        <div class="card" id="host-live-menti-area" style="width: 100%; text-align: center; display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="font-family: var(--font-heading); font-size: 1.1rem;" id="host-menti-display-title">Live Audience Visualizer</h4>
+            <span class="level-badge" id="host-menti-type-badge">Word Cloud</span>
+          </div>
+          <div id="host-menti-visual-content" style="min-height: 180px; display: flex; align-items: center; justify-content: center;">
+            <!-- Live Mentimeter chart renders here -->
           </div>
         </div>
 
@@ -130,6 +173,9 @@ window.QVHostPanelPage = {
     `;
 
     window.QVHostPanel = this;
+    this.resultsVisible = true;
+    this.votingLocked = false;
+    this.currentQuestionData = null;
     this.fetchGuessAnalysis();
   },
 
@@ -150,30 +196,164 @@ window.QVHostPanelPage = {
     }
   },
 
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+      document.body.classList.add('fullscreen-presentation');
+      const btn = document.getElementById('btn-toggle-fullscreen');
+      if (btn) btn.textContent = '🗗 Exit Fullscreen';
+    } else {
+      document.exitFullscreen().catch(() => {});
+      document.body.classList.remove('fullscreen-presentation');
+      const btn = document.getElementById('btn-toggle-fullscreen');
+      if (btn) btn.textContent = '🖥️ Fullscreen Presentation';
+    }
+  },
+
+  toggleResults() {
+    this.resultsVisible = !this.resultsVisible;
+    if (window.QVGameEngine) window.QVGameEngine.toggleResultsVisibility(this.resultsVisible);
+    const lbl = document.getElementById('lbl-results-status');
+    if (lbl) lbl.textContent = this.resultsVisible ? 'Hide Live Results' : 'Show Live Results';
+    const visualArea = document.getElementById('host-live-menti-area');
+    if (visualArea) visualArea.style.opacity = this.resultsVisible ? '1' : '0.15';
+  },
+
+  toggleLockVoting() {
+    this.votingLocked = !this.votingLocked;
+    if (window.QVGameEngine) window.QVGameEngine.toggleLockVoting(this.votingLocked);
+    const lbl = document.getElementById('lbl-lock-status');
+    if (lbl) lbl.textContent = this.votingLocked ? 'Unlock Voting' : 'Lock Voting';
+    if (window.QVAnimations) window.QVAnimations.showToast(this.votingLocked ? '🔒 Audience voting locked.' : '🔓 Voting unlocked.', 'info');
+  },
+
   startGame() {
     if (window.QVGameEngine) {
       window.QVGameEngine.startGame();
     }
     const startBtn = document.getElementById('host-start-btn');
     const nextBtn = document.getElementById('host-next-btn');
+    const lbBtn = document.getElementById('host-leaderboard-btn');
     if (startBtn) startBtn.style.display = 'none';
     if (nextBtn) nextBtn.style.display = 'inline-flex';
+    if (lbBtn) lbBtn.style.display = 'inline-flex';
   },
 
   nextQuestion() {
     if (window.QVGameEngine) {
       window.QVGameEngine.nextQuestion();
     }
+    // Hide leaderboard when moving to next question
+    const overlay = document.getElementById('host-leaderboard-overlay');
+    if (overlay) overlay.style.display = 'none';
+  },
+
+  showLeaderboard() {
+    if (window.QVGameEngine) {
+      window.QVGameEngine.showLeaderboard();
+    }
+  },
+
+  onLeaderboardShow(data) {
+    const overlay = document.getElementById('host-leaderboard-overlay');
+    const listEl = document.getElementById('host-leaderboard-list');
+    if (!overlay || !listEl) return;
+
+    overlay.style.display = 'block';
+    const allPlayers = data.leaderboard || [];
+    const top6 = allPlayers.slice(0, 6);
+
+    listEl.innerHTML = top6.length === 0 ? `
+      <div class="text-secondary" style="padding: 2rem; text-align: center;">No players have scored yet.</div>
+    ` : `
+      <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; font-weight: 600;">
+        Showing Top ${top6.length} of ${allPlayers.length} Participants:
+      </div>
+      ${top6.map((p, idx) => {
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+        const barWidth = top6[0].score > 0 ? Math.max(8, Math.round((p.score / top6[0].score) * 100)) : 8;
+        return `
+          <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: ${idx < 3 ? 'rgba(253, 203, 110, 0.08)' : 'rgba(255,255,255,0.02)'}; margin-bottom: 0.5rem; border: 1px solid ${idx < 3 ? 'rgba(253, 203, 110, 0.25)' : 'var(--border-color)'}; transition: all 0.3s ease;">
+            <div style="font-size: 1.3rem; min-width: 2.5rem; text-align: center; font-weight: 800;">${medal}</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 700; color: #fff; font-size: 1.05rem;">${p.nickname}</div>
+              <div style="background: rgba(255,255,255,0.06); border-radius: var(--radius-full); height: 6px; margin-top: 0.3rem; overflow: hidden;">
+                <div style="height: 100%; width: ${barWidth}%; background: var(--accent-gradient); border-radius: var(--radius-full); transition: width 0.6s ease;"></div>
+              </div>
+            </div>
+            <div style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--accent-amber); min-width: 80px; text-align: right;">${p.score.toLocaleString()}</div>
+            ${p.streak > 1 ? `<span class="level-badge" style="background: rgba(255, 118, 117, 0.2); color: var(--accent-pink); font-size: 0.7rem;">🔥 ${p.streak}</span>` : ''}
+          </div>
+        `;
+      }).join('')}
+    `;
+
+    overlay.scrollIntoView({ behavior: 'smooth' });
   },
 
   onQuestionShow(data) {
+    this.currentQuestionData = data;
     const qBox = document.getElementById('host-question-text');
     const timerDisplay = document.getElementById('host-timer-display');
     const progressEl = document.getElementById('host-answer-progress');
+    const liveArea = document.getElementById('host-live-menti-area');
+    const typeBadge = document.getElementById('host-menti-type-badge');
 
+    const type = data.type || 'mcq';
     if (qBox) qBox.textContent = `Q${data.questionIndex + 1}/${data.totalQuestions} (${data.topic || 'General'}): ${data.questionText}`;
     if (timerDisplay) timerDisplay.textContent = data.timeLimit || 20;
     if (progressEl) progressEl.textContent = `0 / ${window.QVGameEngine ? window.QVGameEngine.players.length : 0} Players Answered`;
+
+    if (liveArea) {
+      liveArea.style.display = 'block';
+      if (typeBadge) typeBadge.textContent = type.replace('_', ' ').toUpperCase();
+      this.renderInitialMentiVisual(type, data);
+    }
+  },
+
+  renderInitialMentiVisual(type, data) {
+    const visualContent = document.getElementById('host-menti-visual-content');
+    if (!visualContent) return;
+
+    if (type === 'word_cloud') {
+      window.QVCharts.renderWordCloud(visualContent, {});
+    } else if (type === 'poll' || type === 'mcq') {
+      window.QVCharts.renderPollBars(visualContent, data.options || [], {}, 0);
+    } else if (type === 'rating_scale') {
+      window.QVCharts.renderRatingDistribution(visualContent, 0, 0);
+    } else if (type === 'ranking') {
+      window.QVCharts.renderRankingPodium(visualContent, (data.options || []).map(opt => ({ text: opt, score: 0 })));
+    } else if (type === 'open_ended') {
+      visualContent.innerHTML = `<div class="open-ended-wall" id="host-open-wall"><div class="text-secondary" style="padding: 2rem; grid-column: 1 / -1;">💬 Waiting for audience responses to appear live on the wall...</div></div>`;
+    }
+  },
+
+  updateMentiLiveVisuals(data) {
+    const visualContent = document.getElementById('host-menti-visual-content');
+    if (!visualContent) return;
+
+    const type = data.type || (this.currentQuestionData ? this.currentQuestionData.type : 'mcq');
+
+    if (type === 'word_cloud' && data.wordFrequencies) {
+      window.QVCharts.renderWordCloud(visualContent, data.wordFrequencies);
+    } else if ((type === 'poll' || type === 'mcq') && data.optionCounts) {
+      window.QVCharts.renderPollBars(visualContent, data.options || (this.currentQuestionData?.options) || [], data.optionCounts, data.totalVotes || data.totalAnswered);
+    } else if (type === 'rating_scale') {
+      window.QVCharts.renderRatingDistribution(visualContent, data.avgRating || 0, data.ratingsCount || 0);
+    } else if (type === 'ranking' && data.rankedItems) {
+      window.QVCharts.renderRankingPodium(visualContent, data.rankedItems);
+    } else if (type === 'open_ended' && data.openEndedResponses) {
+      visualContent.innerHTML = `
+        <div class="open-ended-wall">
+          ${data.openEndedResponses.map(item => `
+            <div class="open-ended-card">
+              <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">"${item.text}"</div>
+              <div class="text-secondary" style="font-size: 0.75rem;">— ${item.nickname || 'Attendee'}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
   },
 
   updateTimer(timeRemaining) {
@@ -304,60 +484,49 @@ window.QVHostPanelPage = {
   onQuestionEnd(data) {
     const qBox = document.getElementById('host-question-text');
     if (qBox) {
-      const correctOptionLetter = String.fromCharCode(65 + (data.correctOption !== undefined ? data.correctOption : 0));
-      const correctText = data.correctOptionText ? `${correctOptionLetter}. ${data.correctOptionText}` : `Option ${correctOptionLetter}`;
+      const type = data.type || (this.currentQuestionData?.type) || 'mcq';
+      const isQuizType = type === 'mcq' || type === 'true_false';
 
-      qBox.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left; width: 100%;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="font-size: 1.2rem; font-weight: 800; color: var(--accent-green);">🏁 Question Finished Results</div>
-            <span class="level-badge" style="background: rgba(0, 184, 148, 0.2); color: var(--accent-green);">
-              Correct Answer: ${correctText}
-            </span>
+      if (isQuizType) {
+        const correctOptionLetter = String.fromCharCode(65 + (data.correctOption !== undefined ? data.correctOption : 0));
+        const correctText = data.correctOptionText ? `${correctOptionLetter}. ${data.correctOptionText}` : `Option ${correctOptionLetter}`;
+
+        qBox.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 1rem; text-align: left; width: 100%;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 1.2rem; font-weight: 800; color: var(--accent-green);">🏁 Question Results</div>
+              <span class="level-badge" style="background: rgba(0, 184, 148, 0.2); color: var(--accent-green);">
+                Correct Answer: ${correctText}
+              </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div style="background: rgba(0, 184, 148, 0.15); border: 1px solid var(--accent-green); padding: 1rem; border-radius: var(--radius-md); text-align: center;">
+                <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-green);">${data.correctCount || 0}</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent-green);">Students Correct ✓</div>
+              </div>
+
+              <div style="background: rgba(255, 118, 117, 0.15); border: 1px solid var(--accent-red); padding: 1rem; border-radius: var(--radius-md); text-align: center;">
+                <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-red);">${data.wrongCount || 0}</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent-red);">Wrong Answers ✗</div>
+              </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.04); border-left: 4px solid var(--accent-green); padding: 0.75rem 1rem; border-radius: var(--radius-sm);">
+              <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">CORRECT ANSWER</div>
+              <div style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-top: 0.2rem;">${correctText}</div>
+              ${data.explanation ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem;">${data.explanation}</div>` : ''}
+            </div>
           </div>
-
-          <!-- Host Summary Metrics: Correct vs Wrong Students -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div style="background: rgba(0, 184, 148, 0.15); border: 1px solid var(--accent-green); padding: 1rem; border-radius: var(--radius-md); text-align: center;">
-              <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-green);">${data.correctCount || 0}</div>
-              <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent-green);">Students Correct ✓</div>
-            </div>
-
-            <div style="background: rgba(255, 118, 117, 0.15); border: 1px solid var(--accent-red); padding: 1rem; border-radius: var(--radius-md); text-align: center;">
-              <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent-red);">${data.wrongCount || 0}</div>
-              <div style="font-size: 0.9rem; font-weight: 700; color: var(--accent-red);">Wrong Answers ✗</div>
-            </div>
+        `;
+      } else {
+        qBox.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; text-align: center; width: 100%;">
+            <div style="font-size: 1.3rem; font-weight: 800; color: var(--accent-cyan);">✨ Interactive Slide Concluded</div>
+            <p class="text-secondary" style="font-size: 0.95rem;">Audience responses captured & visualized in real-time above.</p>
           </div>
-
-          <!-- Correct Option Banner -->
-          <div style="background: rgba(255,255,255,0.04); border-left: 4px solid var(--accent-green); padding: 0.75rem 1rem; border-radius: var(--radius-sm);">
-            <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">CORRECT ANSWER</div>
-            <div style="font-size: 1.05rem; font-weight: 700; color: #fff; margin-top: 0.2rem;">
-              ${correctText}
-            </div>
-            ${data.explanation ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem;">${data.explanation}</div>` : ''}
-          </div>
-
-          <!-- Option Response Distribution Chart -->
-          ${data.options ? `
-            <div style="display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.3rem;">
-              <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Option Response Breakdown:</div>
-              ${data.options.map((optText, idx) => {
-                const count = (data.optionCounts && data.optionCounts[idx]) || 0;
-                const isCorrectOpt = idx === data.correctOption;
-                const total = data.totalAnswered || 1;
-                const pct = data.totalAnswered ? Math.round((count / total) * 100) : 0;
-                return `
-                  <div style="display: flex; align-items: center; justify-content: space-between; background: ${isCorrectOpt ? 'rgba(0, 184, 148, 0.2)' : 'rgba(255,255,255,0.03)'}; border: 1px solid ${isCorrectOpt ? 'var(--accent-green)' : 'rgba(255,255,255,0.08)'}; padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.85rem;">
-                    <span>${String.fromCharCode(65 + idx)}. ${optText} ${isCorrectOpt ? '✓ (Correct)' : ''}</span>
-                    <span style="font-weight: 700; color: ${isCorrectOpt ? 'var(--accent-green)' : '#fff'};">${count} Students (${pct}%)</span>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          ` : ''}
-        </div>
-      `;
+        `;
+      }
     }
     this.fetchGuessAnalysis();
   },
@@ -366,10 +535,15 @@ window.QVHostPanelPage = {
     const qBox = document.getElementById('host-question-text');
     if (qBox) {
       qBox.innerHTML = `
-        <div style="color: var(--accent-amber); font-size: 2rem;">🏆 Game Finished!</div>
-        <p class="text-secondary" style="font-size: 1rem;">Congratulations to all participants!</p>
+        <div style="color: var(--accent-amber); font-size: 2rem;">🏆 Presentation & Game Complete!</div>
+        <p class="text-secondary" style="font-size: 1rem;">All audience responses and test results processed.</p>
       `;
+    }
+    // Auto-show final leaderboard
+    if (data && data.leaderboard) {
+      this.onLeaderboardShow({ leaderboard: data.leaderboard });
     }
     this.fetchGuessAnalysis();
   }
 };
+
