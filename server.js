@@ -1259,6 +1259,50 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// ── PRODUCTION LEADERBOARD ENDPOINT (STRICT DEDUPLICATION) ────
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    let rows = [];
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').order('xp', { ascending: false }).limit(50);
+        if (data && !error && data.length > 0) rows = data;
+      } catch (e) {}
+    }
+
+    if (rows.length === 0) {
+      try {
+        rows = db.prepare('SELECT id, name, username, email, level, xp, streak FROM users ORDER BY xp DESC').all();
+      } catch (e) {}
+    }
+
+    // Strict in-memory deduplication by normalized email / name
+    const uniqueMap = new Map();
+    rows.forEach(item => {
+      const normalizedKey = (item.email || item.name || '').toLowerCase().trim();
+      const existing = uniqueMap.get(normalizedKey);
+      if (!existing || item.xp > existing.xp) {
+        uniqueMap.set(normalizedKey, {
+          id: item.id,
+          name: item.name,
+          level: item.level || 1,
+          xp: item.xp || 0,
+          streak: item.streak || 0,
+          badge: (item.level >= 12) ? '👑 Grandmaster' : (item.level >= 9) ? '⭐ Quiz Master' : (item.level >= 6) ? '🔥 Challenger' : (item.level >= 4) ? '💡 Explorer' : '🚀 Rookie'
+        });
+      }
+    });
+
+    const leaderboard = Array.from(uniqueMap.values())
+      .sort((a, b) => b.xp - a.xp)
+      .map((item, idx) => ({ ...item, rank: idx + 1 }));
+
+    res.json({ success: true, leaderboard });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ── PRODUCTION SUPABASE / SQLITE API ENDPOINTS ─────────
 
 app.get('/api/quizzes', async (req, res) => {

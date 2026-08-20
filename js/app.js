@@ -77,6 +77,17 @@ window.QVApp = {
     this.currentRoute = routeName;
     this.routeParams = params;
 
+    // Trigger Top Route Progress Bar
+    let bar = document.getElementById('route-progress-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'route-progress-bar';
+      document.body.prepend(bar);
+    }
+    bar.style.opacity = '1';
+    bar.style.width = '30%';
+    setTimeout(() => { bar.style.width = '75%'; }, 80);
+
     // Update nav link active styles
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     const activeNav = document.getElementById(`nav-${routeName}`);
@@ -116,6 +127,20 @@ window.QVApp = {
         break;
       default:
         if (window.QVLandingPage) window.QVLandingPage.render(mainEl);
+    }
+
+    // Complete Progress Bar
+    setTimeout(() => {
+      bar.style.width = '100%';
+      setTimeout(() => {
+        bar.style.opacity = '0';
+        setTimeout(() => { bar.style.width = '0%'; }, 300);
+      }, 200);
+    }, 150);
+
+    // Reinitialize 3D tilt and GSAP effects on newly mounted route elements
+    if (window.QVAnimations) {
+      setTimeout(() => window.QVAnimations.init3DTilt(), 100);
     }
   }
 };

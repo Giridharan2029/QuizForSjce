@@ -1,32 +1,129 @@
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
-  0% { box-shadow: 0 0 10px rgba(108, 92, 231, 0.2); }
-  50% { box-shadow: 0 0 25px rgba(108, 92, 231, 0.6); }
-  100% { box-shadow: 0 0 10px rgba(108, 92, 231, 0.2); }
+  0% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.2); }
+  50% { box-shadow: 0 0 35px rgba(139, 92, 246, 0.6), 0 0 15px rgba(6, 182, 212, 0.4); }
+  100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.2); }
 }
 
-@keyframes xpBarFill {
-  from { width: 0%; }
+@keyframes listeningBorder {
+  0% { border-color: rgba(139, 92, 246, 0.4); box-shadow: 0 0 20px rgba(139, 92, 246, 0.2); }
+  50% { border-color: rgba(6, 182, 212, 0.8); box-shadow: 0 0 35px rgba(6, 182, 212, 0.4); }
+  100% { border-color: rgba(139, 92, 246, 0.4); box-shadow: 0 0 20px rgba(139, 92, 246, 0.2); }
 }
 
-@keyframes timerPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.08); color: var(--accent-red); }
-  100% { transform: scale(1); }
+@keyframes floatGentle {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes floatReverse {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(10px) rotate(-3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes shimmerLoop {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes medalBob {
+  0% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.1) translateY(-4px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+@keyframes flameFlicker {
+  0% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 4px #f59e0b); }
+  50% { transform: scale(1.15) rotate(3deg); filter: drop-shadow(0 0 12px #ef4444); }
+  100% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 4px #f59e0b); }
+}
+
+@keyframes rankChangeUp {
+  0% { transform: translateY(4px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.35s ease forwards;
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-glow {
   animation: pulseGlow 2.5s infinite;
 }
 
-.timer-critical {
-  animation: timerPulse 0.8s infinite;
+.animate-listening {
+  animation: listeningBorder 3s infinite ease-in-out;
 }
+
+.animate-float {
+  animation: floatGentle 5s infinite ease-in-out;
+}
+
+.animate-float-reverse {
+  animation: floatReverse 6s infinite ease-in-out;
+}
+
+.animate-medal {
+  animation: medalBob 2s infinite ease-in-out;
+}
+
+.animate-fire {
+  display: inline-block;
+  animation: flameFlicker 1.8s infinite ease-in-out;
+}
+
+/* Tier Specific Badges with Distinct Colors and Neon Auras */
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.tier-grandmaster {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.25);
+}
+
+.tier-quizmaster {
+  background: rgba(192, 132, 252, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(192, 132, 252, 0.4);
+  box-shadow: 0 0 15px rgba(192, 132, 252, 0.25);
+}
+
+.tier-challenger {
+  background: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.25);
+}
+
+.tier-explorer {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+}
+
+.tier-rookie {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+  box-shadow: 0 0 15px rgba(52, 211, 153, 0.25);
+}
+

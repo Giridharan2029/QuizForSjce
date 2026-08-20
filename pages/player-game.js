@@ -428,10 +428,51 @@ window.QVPlayerGamePage = {
 
   updateTimer(timeRemaining) {
     const timerEl = document.getElementById('player-timer');
-    if (timerEl) {
-      timerEl.textContent = timeRemaining;
-      if (timeRemaining <= 5) timerEl.classList.add('timer-critical');
-      else timerEl.classList.remove('timer-critical');
+    if (!timerEl) return;
+
+    timerEl.textContent = timeRemaining;
+
+    // Shift color dynamically based on time remaining
+    const totalTime = this.currentQuestionData?.timeLimit || 20;
+    const ratio = timeRemaining / totalTime;
+
+    if (ratio > 0.5) {
+      timerEl.style.color = '#10b981';
+      timerEl.style.borderColor = '#10b981';
+      timerEl.classList.remove('timer-critical');
+    } else if (ratio > 0.25) {
+      timerEl.style.color = '#f59e0b';
+      timerEl.style.borderColor = '#f59e0b';
+      timerEl.classList.remove('timer-critical');
+    } else {
+      timerEl.style.color = '#ef4444';
+      timerEl.style.borderColor = '#ef4444';
+      timerEl.classList.add('timer-critical');
+    }
+  },
+
+  onQuestionEnd(data) {
+    this.cleanupTimer();
+    const feedback = document.getElementById('player-feedback-msg');
+    
+    // Check if this was a scored quiz question
+    if (this.selectedOption !== null && data.correctOption !== undefined) {
+      const isCorrect = this.selectedOption === data.correctOption;
+      if (isCorrect) {
+        if (window.QVAnimations) window.QVAnimations.triggerConfetti();
+        if (feedback) feedback.innerHTML = `<span style="color: var(--accent-green); font-size: 1.15rem; font-weight: 800;">🎉 Correct Answer! Points Added to Podium.</span>`;
+      } else {
+        const questionCard = document.querySelector('.game-container');
+        if (questionCard) {
+          questionCard.style.animation = 'timerPulse 0.3s 2';
+          setTimeout(() => { questionCard.style.animation = ''; }, 600);
+        }
+        if (feedback) feedback.innerHTML = `<span style="color: var(--accent-red); font-size: 1.05rem; font-weight: 700;">✗ Incorrect. Correct Option was ${String.fromCharCode(65 + data.correctOption)}.</span>`;
+      }
+    } else {
+      if (feedback) {
+        feedback.innerHTML = `<span style="color: var(--text-secondary); font-size: 1rem;">Slide Concluded ✓. Host navigating presentation...</span>`;
+      }
     }
   },
 
