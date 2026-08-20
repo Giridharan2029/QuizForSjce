@@ -191,11 +191,18 @@ function endQuestion(room) {
 
   console.log(`🏁 Question ${room.currentQuestionIndex + 1} finished in room ${room.code} (${totalAnswered} total responses)`);
 
-  // Broadcast completion signal
+  // Broadcast completion signal with complete answer distribution bar graph data for participants
   io.to(room.code).emit('question_end', {
     message: 'Slide Finished ✓',
     questionIndex: room.currentQuestionIndex,
-    type: q.type || 'mcq'
+    type: q.type || 'mcq',
+    questionText: q.text,
+    options: q.options || [],
+    correctOption: q.correct,
+    optionCounts,
+    correctCount,
+    wrongCount,
+    totalAnswered
   });
 
   // Calculate ranked items sorted by score

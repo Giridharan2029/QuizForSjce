@@ -515,7 +515,7 @@ window.QVPlayerGamePage = {
     this.cleanupTimer();
     const feedback = document.getElementById('player-feedback-msg');
     
-    // Check if this was a scored quiz question
+    // Trigger celebrations/feedback
     if (this.selectedOption !== null && data.correctOption !== undefined) {
       const isCorrect = this.selectedOption === data.correctOption;
       if (isCorrect) {
@@ -534,6 +534,78 @@ window.QVPlayerGamePage = {
         feedback.innerHTML = `<span style="color: var(--text-secondary); font-size: 1rem;">Slide Concluded ✓. Host navigating presentation...</span>`;
       }
     }
+
+    // Render Answer Distribution Bar Graph Modal for every participant
+    if (data.options && data.options.length > 0 && data.optionCounts) {
+      this.renderPlayerAnswerBarGraph(data);
+    }
+  },
+
+  renderPlayerAnswerBarGraph(data) {
+    let modal = document.getElementById('player-bargraph-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'player-bargraph-modal';
+      modal.className = 'modal-overlay';
+      document.body.appendChild(modal);
+    }
+
+    const options = data.options || [];
+    const counts = data.optionCounts || {};
+    const total = data.totalAnswered || Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+    const correctOpt = data.correctOption;
+    const myChoice = this.selectedOption;
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+
+    modal.innerHTML = `
+      <div class="modal card" style="max-width: 540px; width: 92%; border-color: var(--accent-primary); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 35px rgba(255,107,53,0.3);">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.85rem;">
+          <div>
+            <div class="hero-badge" style="margin: 0;">
+              <span>📊</span>
+              <span>Audience Response Distribution</span>
+            </div>
+            <h3 class="modal-title" style="font-size: 1.25rem; font-weight: 800; margin-top: 0.35rem; color: #fff;">Answer Bar Graph</h3>
+          </div>
+          <button class="modal-close" onclick="document.getElementById('player-bargraph-modal').style.display='none'">✕</button>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+          ${options.map((optText, idx) => {
+            const votes = counts[idx] || 0;
+            const pct = Math.round((votes / Math.max(1, total)) * 100);
+            const isMyChoice = myChoice === idx;
+            const isCorrect = correctOpt === idx;
+            
+            let barColor = 'linear-gradient(90deg, #ff8c42, #ff6b35)';
+            if (isCorrect) barColor = 'linear-gradient(90deg, #10b981, #059669)';
+            else if (isMyChoice) barColor = 'linear-gradient(90deg, #ef4444, #dc2626)';
+
+            return `
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                  <div style="font-weight: 700; color: ${isCorrect ? '#10b981' : isMyChoice ? '#ff7675' : '#fff'}; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>${String.fromCharCode(65 + idx)}. ${optText}</span>
+                    ${isMyChoice ? '<span class="level-badge" style="background: rgba(255,255,255,0.15); font-size: 0.65rem;">YOUR CHOICE</span>' : ''}
+                    ${isCorrect ? '<span style="color: #10b981; font-weight: 800; font-size: 0.8rem;">✓ CORRECT</span>' : ''}
+                  </div>
+                  <span style="font-weight: 800; color: #ff9e64;">${votes} (${pct}%)</span>
+                </div>
+                <div class="progress-bar-bg" style="height: 14px; background: rgba(255,255,255,0.06); border-radius: var(--radius-full);">
+                  <div class="progress-bar-fill" style="width: ${pct}%; background: ${barColor}; border-radius: var(--radius-full);"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <button class="btn btn-primary w-full" style="margin-top: 1.5rem;" onclick="document.getElementById('player-bargraph-modal').style.display='none'">
+          Continue to Next Slide 🚀
+        </button>
+      </div>
+    `;
   },
 
   onLeaderboardShow(data) {
