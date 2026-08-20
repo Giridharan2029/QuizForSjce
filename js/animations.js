@@ -64,24 +64,32 @@ window.QVAnimations = {
   init3DTilt() {
     if (window.innerWidth <= 900 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    document.querySelectorAll('.card, .join-widget, .leaderboard-item').forEach(card => {
+    // Only apply tilt to display cards and hero widgets, exclude inputs and editor containers to prevent shaking
+    document.querySelectorAll('.card-tilt, .stat-card, .join-widget').forEach(card => {
       if (card.dataset.tiltInit) return;
       card.dataset.tiltInit = 'true';
 
+      let isHovered = false;
+      card.addEventListener('mouseenter', () => { isHovered = true; });
+
       card.addEventListener('mousemove', (e) => {
+        if (!isHovered) return;
         const rect = card.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        const rotateX = ((y - centerY) / centerY) * -6;
-        const rotateY = ((x - centerX) / centerX) * 6;
+        const rotateX = ((y - centerY) / centerY) * -3.5;
+        const rotateY = ((x - centerX) / centerX) * 3.5;
 
-        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.015, 1.015, 1.015)`;
+        card.style.transition = 'transform 0.1s cubic-bezier(0.2, 0, 0, 1)';
+        card.style.transform = `perspective(1200px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.01, 1.01, 1.01)`;
       });
 
       card.addEventListener('mouseleave', () => {
-        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        isHovered = false;
+        card.style.transition = 'transform 0.4s ease';
+        card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
       });
     });
   },

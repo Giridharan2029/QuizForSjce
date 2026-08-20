@@ -90,6 +90,46 @@ window.QVPlayerGamePage = {
       if (document.hidden) this.handleTabSwitch();
     });
 
+    // ── ANTI-COPY PROTECTION (Block Context Menu, Selection, Copy & Inspection Keys) ──
+    document.addEventListener('contextmenu', (e) => {
+      if (this.currentQuestionData) {
+        e.preventDefault();
+        if (window.QVAnimations) window.QVAnimations.showToast('🔒 Copying / Context Menu is disabled during test!', 'warning');
+        return false;
+      }
+    });
+
+    document.addEventListener('copy', (e) => {
+      if (this.currentQuestionData) {
+        e.preventDefault();
+        if (window.QVAnimations) window.QVAnimations.showToast('🔒 Question text copy is disabled!', 'warning');
+        return false;
+      }
+    });
+
+    document.addEventListener('selectstart', (e) => {
+      if (this.currentQuestionData) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (this.currentQuestionData) {
+        // Block Ctrl+C, Ctrl+A, Ctrl+U, F12, PrintScreen
+        if ((e.ctrlKey || e.metaKey) && ['c', 'a', 'u', 's', 'p'].includes(e.key.toLowerCase())) {
+          e.preventDefault();
+          if (window.QVAnimations) window.QVAnimations.showToast('🔒 Shortcut disabled during quiz!', 'warning');
+          return false;
+        }
+        if (e.key === 'PrintScreen' || e.key === 'F12') {
+          e.preventDefault();
+          if (window.QVAnimations) window.QVAnimations.showToast('🔒 Screenshot / Inspector key disabled!', 'warning');
+          return false;
+        }
+      }
+    });
+
     // Prevent accidental page redirect / navigation during active test
     window.addEventListener('beforeunload', (e) => {
       if (this.currentQuestionData && !this.hasSubmitted) {
@@ -118,8 +158,28 @@ window.QVPlayerGamePage = {
       modal.style.display = 'flex';
     }
 
+    // Inspect active document & window destination state
+    const currentTitle = document.title || 'QuizVerse Game';
+    let targetInfo = 'External Application / OS Window';
+    if (document.hidden) {
+      targetInfo = 'Background Tab / Browser Window Switched';
+    } else if (!document.hasFocus()) {
+      targetInfo = 'DevTools / Secondary Application Window Focused';
+    }
+
+    // Transmit tab switch alert to host in realtime
+    if (window.QVGameEngine && window.QVGameEngine.socket) {
+      window.QVGameEngine.socket.emit('student_tab_switched', {
+        roomCode: this.params.roomCode,
+        studentName: this.params.nickname || (window.QVData.user ? window.QVData.user.name : 'Player'),
+        switchCount: this.tabSwitchCount,
+        targetInfo: targetInfo,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    }
+
     if (window.QVAnimations) {
-      window.QVAnimations.showToast(`⚠️ Warning: Tab switch #${this.tabSwitchCount} detected!`, 'error');
+      window.QVAnimations.showToast(`⚠️ Warning: Tab switch #${this.tabSwitchCount} detected! (${targetInfo})`, 'error');
     }
   },
 

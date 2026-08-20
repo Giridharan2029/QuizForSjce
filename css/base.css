@@ -59,7 +59,7 @@ body {
 .blob-1 {
   width: 550px;
   height: 550px;
-  background: radial-gradient(circle, #8b5cf6 0%, rgba(139, 92, 246, 0) 70%);
+  background: radial-gradient(circle, #ff6b35 0%, rgba(255, 107, 53, 0) 70%);
   top: -10%;
   left: 10%;
   animation-duration: 18s;
@@ -68,7 +68,7 @@ body {
 .blob-2 {
   width: 650px;
   height: 650px;
-  background: radial-gradient(circle, #06b6d4 0%, rgba(6, 182, 212, 0) 70%);
+  background: radial-gradient(circle, #f48c06 0%, rgba(244, 140, 6, 0) 70%);
   bottom: -15%;
   right: 5%;
   animation-duration: 25s;
@@ -78,7 +78,7 @@ body {
 .blob-3 {
   width: 450px;
   height: 450px;
-  background: radial-gradient(circle, #ec4899 0%, rgba(236, 72, 153, 0) 70%);
+  background: radial-gradient(circle, #ff8c42 0%, rgba(255, 140, 66, 0) 70%);
   top: 40%;
   left: 45%;
   animation-duration: 20s;
@@ -101,7 +101,7 @@ body {
   margin-top: -225px;
   margin-left: -225px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(99, 102, 241, 0.04) 45%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 107, 53, 0.15) 0%, rgba(244, 140, 6, 0.05) 45%, transparent 70%);
   pointer-events: none;
   z-index: -1;
   transform: translate3d(0,0,0);
@@ -116,9 +116,9 @@ body {
   left: 0;
   height: 3px;
   width: 0%;
-  background: linear-gradient(90deg, #ec4899, #8b5cf6, #06b6d4);
+  background: linear-gradient(90deg, #ff5400, #ff6b35, #ffaa00);
   z-index: 9999;
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 10px rgba(255, 107, 53, 0.8);
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
 
@@ -136,21 +136,21 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 1.1rem 2.5rem;
-  background: rgba(13, 18, 34, 0.7);
+  background: rgba(18, 13, 9, 0.78);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
-  z-index: 1000;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  transition: padding 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .navbar.scrolled {
   padding: 0.75rem 2.5rem;
-  background: rgba(6, 9, 19, 0.88);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.15);
-  border-bottom-color: rgba(139, 92, 246, 0.25);
+  background: rgba(18, 13, 9, 0.92);
+  border-bottom-color: var(--border-color-glow);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 107, 53, 0.15);
 }
 
 .nav-brand {

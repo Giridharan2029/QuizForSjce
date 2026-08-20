@@ -14,14 +14,21 @@ window.QVScheduledTestsPage = {
     this.activeTests = await this.fetchScheduledTests();
 
     container.innerHTML = `
-      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2rem;">
+      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2.25rem;">
         
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <!-- Header -->
+        <div style="background: radial-gradient(circle at 10% 20%, rgba(255, 107, 53, 0.12), transparent 60%); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <div>
-            <h1 style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800;">
-              📅 Scheduled Tests & Homework Mode
+            <div class="hero-badge">
+              <span>📅</span>
+              <span>Asynchronous Exam & Homework Mode</span>
+            </div>
+            <h1 style="font-family: var(--font-heading); font-size: 2.4rem; font-weight: 900; letter-spacing: -0.02em; margin-top: 0.35rem;">
+              Scheduled Tests & Assignments
             </h1>
-            <p class="text-secondary">Schedule time-windowed quizzes and assignments for students to complete asynchronously at their own pace.</p>
+            <p class="text-secondary" style="font-size: 1.05rem; margin-top: 0.25rem;">
+              Publish time-windowed exams with anti-cheat tracking for students to complete asynchronously at their own pace.
+            </p>
           </div>
 
           <button class="btn btn-primary btn-lg" onclick="QVScheduledTestsPage.showCreateModal()">
@@ -30,10 +37,13 @@ window.QVScheduledTestsPage = {
         </div>
 
         <!-- Section 1: Active & Upcoming Scheduled Tests -->
-        <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700;">
-            Active & Available Tests (${this.activeTests.length})
-          </h2>
+        <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800;">
+              Available & Upcoming Tests (${this.activeTests.length})
+            </h2>
+            <span class="text-secondary" style="font-size: 0.9rem;">Auto-graded & anti-cheat protected</span>
+          </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;" id="sched-tests-grid">
             ${this.renderTestsGrid(this.activeTests, user)}
@@ -111,18 +121,18 @@ window.QVScheduledTestsPage = {
     return tests.map(t => {
       const isHost = t.host_id === user.id;
       return `
-        <div style="background: rgba(10, 14, 26, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+        <div style="background: rgba(28, 20, 14, 0.75); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; transition: all 0.25s ease;" class="card-hover">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-              <div style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700; color: #fff;">${t.title}</div>
-              <div class="text-secondary" style="font-size: 0.85rem; margin-top: 0.2rem;">⏱️ Duration: <strong>${t.duration_minutes || 30} mins</strong></div>
+              <div style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: #fff;">${t.title}</div>
+              <div class="text-secondary" style="font-size: 0.85rem; margin-top: 0.2rem;">⏱️ Duration: <strong style="color: #fff;">${t.duration_minutes || 30} mins</strong></div>
             </div>
-            <span class="level-badge" style="background: rgba(0, 206, 201, 0.2); color: var(--accent-cyan);">📅 Available</span>
+            <span class="level-badge" style="background: rgba(255, 107, 53, 0.15); color: #ff9e64; border-color: rgba(255, 107, 53, 0.35);">📅 Active</span>
           </div>
 
-          <div style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem;">
-            <div>Due: <strong style="color: #fdcb6e;">${t.scheduled_at}</strong></div>
-            <div class="text-secondary" style="font-size: 0.8rem; margin-top: 0.2rem;">Host: ${t.host_id === user.id ? 'You (Instructor)' : 'Teacher / Host'}</div>
+          <div style="background: rgba(255,255,255,0.03); padding: 0.85rem; border-radius: var(--radius-sm); font-size: 0.88rem; border: 1px solid rgba(255,255,255,0.04);">
+            <div>Due Date: <strong style="color: #ff9e64;">${t.scheduled_at}</strong></div>
+            <div class="text-secondary" style="font-size: 0.825rem; margin-top: 0.2rem;">Host: ${t.host_id === user.id ? 'You (Instructor)' : 'Teacher / Host'}</div>
           </div>
 
           <button class="btn btn-primary w-full" onclick="QVScheduledTestsPage.startAsyncAttempt('${t.id}', '${t.quiz_id}')">
@@ -238,12 +248,22 @@ window.QVScheduledTestsPage = {
 
   attachProctoring() {
     window.onblur = () => {
+      const warn = document.getElementById('async-tab-warning');
+      if (warn) warn.style.display = 'block';
       if (this.currentTestAttempt) {
-        const w = document.getElementById('async-tab-warning');
-        if (w) w.style.display = 'block';
         if (window.QVAnimations) window.QVAnimations.showToast('⚠️ Window switched! Please remain on the quiz page.', 'error');
       }
     };
+
+    const container = document.getElementById('async-test-player-container');
+    if (container) {
+      container.style.userSelect = 'none';
+      container.style.webkitUserSelect = 'none';
+      container.addEventListener('contextmenu', e => e.preventDefault());
+      container.addEventListener('copy', e => e.preventDefault());
+      container.addEventListener('selectstart', e => e.preventDefault());
+    }
+
     window.onbeforeunload = (e) => {
       if (this.currentTestAttempt) {
         e.preventDefault();

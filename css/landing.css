@@ -13,13 +13,13 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 1rem;
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: rgba(255, 107, 53, 0.12);
+  border: 1px solid rgba(255, 107, 53, 0.35);
   border-radius: var(--radius-full);
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-accent);
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.25);
   margin-bottom: 0.5rem;
 }
 
@@ -30,13 +30,13 @@
   line-height: 1.1;
   max-width: 900px;
   letter-spacing: -0.03em;
-  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 65%, #94a3b8 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #fef3e2 65%, #ebd5bd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .hero-title .highlight-text {
-  background: linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #38bdf8 100%);
+  background: linear-gradient(135deg, #ff9e64 0%, #ff6b35 50%, #f48c06 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
@@ -52,14 +52,15 @@
 /* Floating Parallax Decorative Particles */
 .floating-hero-pill {
   position: absolute;
-  background: rgba(18, 24, 44, 0.7);
+  background: rgba(28, 20, 14, 0.8);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 107, 53, 0.25);
   padding: 0.6rem 1.1rem;
   border-radius: var(--radius-full);
   font-weight: 700;
   font-size: 0.85rem;
-  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 107, 53, 0.15);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -83,10 +84,10 @@
 
 /* Glassmorphism Join Room Card with Listening Pulse */
 .join-widget {
-  background: rgba(18, 24, 44, 0.75);
+  background: rgba(28, 20, 14, 0.82);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(139, 92, 246, 0.4);
+  border: 1px solid rgba(255, 107, 53, 0.45);
   border-radius: var(--radius-lg);
   padding: 2rem;
   width: 100%;
@@ -94,7 +95,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(139, 92, 246, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(255, 107, 53, 0.25);
   animation: listeningBorder 4s infinite ease-in-out;
   position: relative;
   overflow: hidden;

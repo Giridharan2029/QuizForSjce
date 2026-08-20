@@ -1,25 +1,25 @@
 :root {
-  /* Color Palette - Cyber Violet / Deep Dark Navy Gaming Theme */
-  --bg-primary: #060913;
-  --bg-secondary: #0d1222;
-  --bg-tertiary: #141c33;
-  --bg-card: rgba(18, 24, 44, 0.65);
-  --bg-card-hover: rgba(28, 38, 70, 0.8);
-  --bg-glass: rgba(13, 18, 34, 0.75);
+  /* Color Palette - Glazy Orange & Creamy White Luxury Theme */
+  --bg-primary: #0e0a07;
+  --bg-secondary: #17110c;
+  --bg-tertiary: #231912;
+  --bg-card: rgba(28, 20, 14, 0.72);
+  --bg-card-hover: rgba(42, 30, 20, 0.85);
+  --bg-glass: rgba(22, 16, 11, 0.82);
 
-  /* Primary Brand Violet */
-  --accent-primary: #8b5cf6;
-  --accent-primary-hover: #7c3aed;
-  --accent-primary-glow: rgba(139, 92, 246, 0.4);
-  --accent-gradient: linear-gradient(135deg, #a855f7 0%, #6366f1 50%, #3b82f6 100%);
-  --accent-gradient-radial: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, rgba(99, 102, 241, 0.08) 50%, transparent 80%);
+  /* Primary Brand Glazy Orange */
+  --accent-primary: #ff6b35;
+  --accent-primary-hover: #fa5216;
+  --accent-primary-glow: rgba(255, 107, 53, 0.45);
+  --accent-gradient: linear-gradient(135deg, #ff8c42 0%, #ff6b35 50%, #e85d04 100%);
+  --accent-gradient-radial: radial-gradient(circle, rgba(255, 107, 53, 0.28) 0%, rgba(244, 140, 6, 0.08) 50%, transparent 80%);
 
-  /* Neon Accents */
-  --accent-cyan: #06b6d4;
-  --accent-cyan-glow: rgba(6, 182, 212, 0.4);
-  --accent-amber: #f59e0b;
-  --accent-amber-glow: rgba(245, 158, 11, 0.4);
-  --accent-pink: #ec4899;
+  /* Secondary Glows & Accents */
+  --accent-cyan: #fbbf24;
+  --accent-cyan-glow: rgba(251, 191, 36, 0.4);
+  --accent-amber: #f48c06;
+  --accent-amber-glow: rgba(244, 140, 6, 0.45);
+  --accent-pink: #ff5400;
   --accent-green: #10b981;
   --accent-green-glow: rgba(16, 185, 129, 0.4);
   --accent-red: #ef4444;
@@ -27,23 +27,24 @@
   /* Valorant / Duolingo League Tiers */
   --tier-grandmaster: #fbbf24;
   --tier-grandmaster-glow: 0 0 20px rgba(251, 191, 36, 0.5);
-  --tier-quizmaster: #c084fc;
-  --tier-quizmaster-glow: 0 0 20px rgba(192, 132, 252, 0.5);
-  --tier-challenger: #f97316;
-  --tier-challenger-glow: 0 0 20px rgba(249, 115, 22, 0.5);
-  --tier-explorer: #38bdf8;
-  --tier-explorer-glow: 0 0 20px rgba(56, 189, 248, 0.5);
+  --tier-quizmaster: #ff8c42;
+  --tier-quizmaster-glow: 0 0 20px rgba(255, 140, 66, 0.5);
+  --tier-challenger: #ff5400;
+  --tier-challenger-glow: 0 0 20px rgba(255, 84, 0, 0.5);
+  --tier-explorer: #fca311;
+  --tier-explorer-glow: 0 0 20px rgba(252, 163, 17, 0.5);
   --tier-rookie: #34d399;
   --tier-rookie-glow: 0 0 20px rgba(52, 211, 153, 0.5);
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-accent: #c084fc;
+  /* Creamy White Typography & Accents */
+  --text-primary: #fffdfa;
+  --text-secondary: #e6ded6;
+  --text-muted: #9c8e82;
+  --text-accent: #ff9e64;
 
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-glow: rgba(168, 85, 247, 0.45);
-  --border-color-cyan: rgba(6, 182, 212, 0.45);
+  --border-color: rgba(255, 240, 225, 0.1);
+  --border-color-glow: rgba(255, 107, 53, 0.5);
+  --border-color-cyan: rgba(251, 191, 36, 0.5);
 
   --font-heading: 'Space Grotesk', -apple-system, sans-serif;
   --font-body: 'Inter', -apple-system, sans-serif;
@@ -55,9 +56,9 @@
 
   --shadow-sm: 0 4px 10px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 35px rgba(139, 92, 246, 0.35);
-  --shadow-cyan-glow: 0 0 35px rgba(6, 182, 212, 0.35);
-  --shadow-amber-glow: 0 0 35px rgba(245, 158, 11, 0.35);
+  --shadow-glow: 0 0 35px rgba(255, 107, 53, 0.38);
+  --shadow-cyan-glow: 0 0 35px rgba(251, 191, 36, 0.35);
+  --shadow-amber-glow: 0 0 35px rgba(244, 140, 6, 0.4);
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;

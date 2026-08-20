@@ -159,6 +159,28 @@ window.QVHostPanelPage = {
 
         </div>
 
+        <!-- HOST-ONLY: REALTIME WINDOW / TAB SWITCH PROCTORING LOGS -->
+        <div class="card" style="width: 100%; display: flex; flex-direction: column; gap: 1.25rem; border-top: 2px solid #ef4444;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.35rem;">🛡️</span>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: #ff7675;">
+                Anti-Cheat & Tab Switch Proctoring Feed
+              </h3>
+              <span class="level-badge" id="host-proctor-alert-count" style="background: rgba(239, 68, 68, 0.2); color: #ff7675; font-weight: 800;">
+                0 Alerts
+              </span>
+            </div>
+            <span class="text-secondary" style="font-size: 0.85rem;">Live Realtime Monitoring</span>
+          </div>
+
+          <div id="host-proctoring-log-list" style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 250px; overflow-y: auto;">
+            <div class="text-muted" id="host-proctor-empty-msg" style="font-size: 0.85rem; padding: 1.25rem; text-align: center; background: rgba(255,255,255,0.02); border-radius: var(--radius-sm); border: 1px dashed var(--border-color);">
+              🛡️ All student browser sessions are currently focused on the quiz window.
+            </div>
+          </div>
+        </div>
+
         <!-- Joined Players Grid -->
         <div class="card" style="width: 100%;">
           <h3 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 1rem;">
@@ -225,6 +247,54 @@ window.QVHostPanelPage = {
     const lbl = document.getElementById('lbl-lock-status');
     if (lbl) lbl.textContent = this.votingLocked ? 'Unlock Voting' : 'Lock Voting';
     if (window.QVAnimations) window.QVAnimations.showToast(this.votingLocked ? '🔒 Audience voting locked.' : '🔓 Voting unlocked.', 'info');
+  },
+
+  onProctoringAlert(data) {
+    const nav = data.navEvent;
+    const totalLogs = data.totalLogs || [];
+
+    const badge = document.getElementById('host-proctor-alert-count');
+    if (badge) badge.textContent = `${totalLogs.length} Alert${totalLogs.length === 1 ? '' : 's'}`;
+
+    const emptyMsg = document.getElementById('host-proctor-empty-msg');
+    if (emptyMsg) emptyMsg.style.display = 'none';
+
+    const logList = document.getElementById('host-proctoring-log-list');
+    if (logList && nav) {
+      const card = document.createElement('div');
+      card.className = 'animate-fade-in';
+      card.style.cssText = `
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      `;
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.25rem;">⚠️</span>
+          <div>
+            <div style="font-weight: 800; color: #fff; font-size: 0.95rem;">
+              <span style="color: #ff7675;">${nav.studentName}</span> navigated away! (Switch #${nav.switchCount})
+            </div>
+            <div class="text-secondary" style="font-size: 0.825rem; margin-top: 0.15rem;">
+              Destination: <strong style="color: #fab1a0;">${nav.targetInfo}</strong> | On Question #${nav.questionIndex}
+            </div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <span class="level-badge" style="background: var(--accent-red); color: #fff; font-size: 0.75rem;">${nav.timestamp}</span>
+        </div>
+      `;
+      logList.prepend(card);
+    }
+
+    if (window.QVAnimations && nav) {
+      window.QVAnimations.showToast(`🚨 Anti-Cheat: ${nav.studentName} switched to "${nav.targetInfo}"!`, 'error');
+    }
   },
 
   startGame() {

@@ -488,12 +488,34 @@ app.post('/api/ai/generate-from-file', upload.single('document'), async (req, re
 
     let extractedText = '';
 
-    if ((file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')) && pdfParse) {
-      const pdfData = await pdfParse(file.buffer);
-      extractedText = pdfData ? pdfData.text || '' : '';
+    if (file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf')) {
+      try {
+        if (typeof pdfParse === 'function') {
+          const pdfData = await pdfParse(file.buffer);
+          extractedText = pdfData ? (pdfData.text || '') : '';
+        } else if (pdfParse && pdfParse.PDFParse) {
+          const parser = new pdfParse.PDFParse({ data: file.buffer });
+          const textResult = await parser.getText();
+          extractedText = typeof textResult === 'string' ? textResult : (textResult?.text || '');
+        }
+      } catch (pdfErr) {
+        console.warn('⚠️ Primary PDF parser warning, using fallback stream extraction:', pdfErr.message);
+      }
+
+      // Regex / stream fallback if library returns empty
+      if (!extractedText.trim()) {
+        const raw = file.buffer.toString('latin1');
+        const textMatches = raw.match(/\(([^()]{2,})\)[\s]*Tj/g) || raw.match(/BT[\s\S]*?ET/g) || [];
+        const rawExtracted = textMatches.map(m => m.replace(/[^a-zA-Z0-9\s.,!?:;'"()-]/g, ' ')).join(' ');
+        if (rawExtracted.length > 50) extractedText = rawExtracted;
+      }
     } else if ((file.originalname.toLowerCase().endsWith('.docx') || file.originalname.toLowerCase().endsWith('.doc')) && mammoth) {
-      const docxData = await mammoth.extractRawText({ buffer: file.buffer });
-      extractedText = docxData ? docxData.value || '' : '';
+      try {
+        const docxData = await mammoth.extractRawText({ buffer: file.buffer });
+        extractedText = docxData ? docxData.value || '' : '';
+      } catch (docxErr) {
+        console.warn('⚠️ Mammoth docx extraction warning:', docxErr.message);
+      }
     } else {
       // PPTX / PPT / TXT parsing (strip non-printable/xml formatting)
       const rawText = file.buffer.toString('utf-8');
@@ -541,16 +563,19 @@ Instructions:
 `;
 
     let responseText = '';
-    const modelNames = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest'];
+    const modelNames = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
     if (genAI) {
       for (const mName of modelNames) {
         try {
           const model = genAI.getGenerativeModel({ model: mName });
           const result = await model.generateContent(prompt);
           responseText = await result.response.text();
-          if (responseText) break;
+          if (responseText) {
+            console.log(`🤖 Gemini AI model [${mName}] successfully generated ${count} document questions.`);
+            break;
+          }
         } catch (err) {
-          console.warn(`Gemini model ${mName} attempt failed:`, err.message);
+          console.warn(`Gemini model ${mName} attempt notice:`, err.message);
         }
       }
     }
@@ -715,20 +740,40 @@ io.on('connection', (socket) => {
 
   socket.on('create_game', async ({ quizId, quiz: clientQuiz, classroomId }) => {
     const roomCode = generateRoomCode();
-    let quiz = clientQuiz || await getQuizData(quizId);
+    let quiz = clientQuiz;
 
     if (!quiz) {
-      quiz = await getQuizData('q1');
+      try {
+        quiz = await getQuizData(quizId || 'q1');
+      } catch (e) {
+        console.warn('Quiz load notice, using local default:', e.message);
+      }
+    }
+
+    if (!quiz) {
+      quiz = {
+        id: 'q1',
+        title: 'World Capitals Challenge',
+        category: 'Geography',
+        difficulty: 'Medium',
+        timeLimit: 20,
+        questions: [
+          { id: 'q1_1', text: 'What is the capital of Australia?', options: ['Sydney', 'Canberra', 'Melbourne', 'Brisbane'], correct: 1, points: 1000 },
+          { id: 'q1_2', text: 'Which city is the capital of Brazil?', options: ['Rio de Janeiro', 'São Paulo', 'Brasília', 'Salvador'], correct: 2, points: 1000 }
+        ]
+      };
     }
 
     let classroom = null;
     if (classroomId) {
-      const clsRow = db.prepare('SELECT * FROM classrooms WHERE id = ? OR code = ?').get(classroomId, classroomId);
-      if (clsRow) {
-        let members = [];
-        try { members = JSON.parse(clsRow.members_json || '[]'); } catch (e) {}
-        classroom = { id: clsRow.id, name: clsRow.name, code: clsRow.code, members };
-      }
+      try {
+        const clsRow = db.prepare('SELECT * FROM classrooms WHERE id = ? OR code = ?').get(classroomId, classroomId);
+        if (clsRow) {
+          let members = [];
+          try { members = JSON.parse(clsRow.members_json || '[]'); } catch (e) {}
+          classroom = { id: clsRow.id, name: clsRow.name, code: clsRow.code, members };
+        }
+      } catch (e) {}
     }
 
     const room = {
@@ -1102,6 +1147,46 @@ io.on('connection', (socket) => {
     }
   });
 
+  // ── PROCTORING: STUDENT WINDOW / TAB NAVIGATION SWITCH DETECTOR ──
+  socket.on('student_tab_switched', ({ roomCode, studentName, switchCount, targetInfo, timestamp }) => {
+    const targetCode = (roomCode || '').toUpperCase();
+    let room = activeRooms.get(targetCode);
+
+    if (!room) {
+      for (const [c, r] of activeRooms.entries()) {
+        if (c.toUpperCase() === targetCode || r.players.has(socket.id)) { room = r; break; }
+      }
+    }
+
+    if (!room) return;
+
+    const navEvent = {
+      studentId: socket.id,
+      studentName: studentName || (room.players.get(socket.id)?.nickname) || 'Unknown Student',
+      switchCount: switchCount || 1,
+      targetInfo: targetInfo || 'External Window / Background Tab',
+      timestamp: timestamp || new Date().toLocaleTimeString(),
+      questionIndex: (room.currentQuestionIndex || 0) + 1
+    };
+
+    if (!room.proctoringLogs) room.proctoringLogs = [];
+    room.proctoringLogs.push(navEvent);
+
+    console.log(`⚠️ [PROCTORING ALERT] Player "${navEvent.studentName}" in room ${room.code} switched away to: "${navEvent.targetInfo}" (Count: ${navEvent.switchCount})`);
+
+    // Alert host presentation in realtime
+    if (room.hostSocketId) {
+      io.to(room.hostSocketId).emit('host_proctoring_alert', {
+        navEvent,
+        totalLogs: room.proctoringLogs
+      });
+    }
+    io.to(room.code).emit('host_proctoring_alert', {
+      navEvent,
+      totalLogs: room.proctoringLogs
+    });
+  });
+
   socket.on('disconnect', () => {
     activeRooms.forEach((room, code) => {
       if (room.players.has(socket.id)) {
@@ -1335,7 +1420,7 @@ app.post('/api/ai/generate-quiz', async (req, res) => {
     console.log(`🤖 Generating AI Quiz with Gemini for topic: "${topicName}" (${format} format)`);
 
     let responseText = '';
-    const modelNames = ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-latest'];
+    const modelNames = ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
     let lastErr = null;
 
     if (genAI) {

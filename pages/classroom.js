@@ -5,28 +5,45 @@ window.QVClassroomPage = {
     const user = window.QVData.user || {};
 
     container.innerHTML = `
-      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2rem;">
+      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2.25rem;">
         
-        <div>
-          <h1 style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800;">Classroom Hub</h1>
-          <p class="text-secondary">Create digital classrooms or join using a classroom code. When hosting a test, hosts can restrict attendance to specific class students.</p>
+        <!-- Header -->
+        <div style="background: radial-gradient(circle at 10% 20%, rgba(255, 107, 53, 0.12), transparent 60%); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div class="hero-badge">
+              <span>🏫</span>
+              <span>Student Cohort Management</span>
+            </div>
+            <h1 style="font-family: var(--font-heading); font-size: 2.4rem; font-weight: 900; letter-spacing: -0.02em; margin-top: 0.35rem;">
+              Classroom Hub
+            </h1>
+            <p class="text-secondary" style="font-size: 1.05rem; margin-top: 0.25rem;">
+              Create cohorts, distribute join codes, and host scheduled or live quizzes exclusively for enrolled students.
+            </p>
+          </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
           
           <!-- Host Action: Create Classroom -->
-          <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem;">
-            <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700;">➕ Create New Classroom</h2>
+          <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem; border-top: 2px solid #ff6b35;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="stat-icon" style="color: #ff6b35; background: rgba(255, 107, 53, 0.15);">➕</div>
+              <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 800;">Create New Classroom</h2>
+            </div>
             <div class="input-group">
               <label class="input-label">Classroom Name</label>
-              <input type="text" id="cls-create-name" class="input" placeholder="e.g. Grade 10 Science - Sec A">
+              <input type="text" id="cls-create-name" class="input" placeholder="e.g. Grade 10 Science - Section A">
             </div>
             <button class="btn btn-primary btn-lg" onclick="QVClassroomPage.createClassroom()">Create Classroom & Code 🚀</button>
           </div>
 
           <!-- Student Action: Join Classroom with Code -->
-          <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem;">
-            <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700;">🔑 Join Classroom via Code</h2>
+          <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem; border-top: 2px solid #f48c06;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="stat-icon" style="color: #f48c06; background: rgba(244, 140, 6, 0.15);">🔑</div>
+              <h2 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 800;">Join Classroom via Code</h2>
+            </div>
             <div class="input-group">
               <label class="input-label">Classroom Access Code</label>
               <input type="text" id="cls-join-code" class="input" placeholder="e.g. CLS-8A9X2" style="text-transform: uppercase;">
@@ -38,11 +55,14 @@ window.QVClassroomPage = {
 
         <!-- Classrooms List -->
         <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
-          <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700;">Active Classrooms (${classrooms.length})</h2>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800;">Active Classrooms (${classrooms.length})</h2>
+            <span class="text-secondary" style="font-size: 0.9rem;">Organized by active session cohorts</span>
+          </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
             ${classrooms.length === 0 ? `
-              <div class="text-secondary" style="padding: 2rem; text-align: center; grid-column: 1 / -1;">
+              <div class="text-secondary" style="padding: 2.5rem; text-align: center; grid-column: 1 / -1; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
                 No classrooms found. Create one above to restrict hosted tests to specific student classes!
               </div>
             ` : classrooms.map(c => {
@@ -51,26 +71,26 @@ window.QVClassroomPage = {
               const isHost = c.host_id === user.id;
 
               return `
-                <div style="background: rgba(10, 14, 26, 0.6); border: 1px solid var(--border-color-glow); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div style="background: rgba(28, 20, 14, 0.75); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; transition: all 0.25s ease;" class="card-hover">
                   <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
-                      <div style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700;">${c.name}</div>
-                      <div class="text-secondary" style="font-size: 0.85rem;">Host: ${c.host_name || 'Host'} ${isHost ? '<span class="level-badge">You</span>' : ''}</div>
+                      <div style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: #fff;">${c.name}</div>
+                      <div class="text-secondary" style="font-size: 0.85rem; margin-top: 0.2rem;">Host: ${c.host_name || 'Host'} ${isHost ? '<span class="level-badge" style="background: var(--accent-gradient); font-size: 0.7rem;">You</span>' : ''}</div>
                     </div>
-                    <span class="room-code-badge" style="font-size: 1rem; padding: 0.2rem 0.75rem;">${c.code}</span>
+                    <span class="room-code-badge" style="font-size: 0.9rem; padding: 0.25rem 0.75rem; background: rgba(255, 107, 53, 0.15); color: #ff9e64; border-color: rgba(255, 107, 53, 0.35);">${c.code}</span>
                   </div>
 
-                  <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-                    <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
+                  <div style="border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between;">
                       <span>Enrolled Students</span>
-                      <span class="text-accent">${members.length} Members</span>
+                      <span style="color: #ff9e64; font-weight: 800;">${members.length} Members</span>
                     </div>
 
                     <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 100px; overflow-y: auto;">
                       ${members.length === 0 ? `
-                        <span class="text-muted" style="font-size: 0.8rem;">No students joined yet. Share code <strong>${c.code}</strong></span>
+                        <span class="text-muted" style="font-size: 0.825rem;">No students joined yet. Share code <strong>${c.code}</strong></span>
                       ` : members.map(m => `
-                        <span class="player-chip" style="font-size: 0.8rem; padding: 0.25rem 0.6rem;">👤 ${m.name}</span>
+                        <span class="player-chip" style="font-size: 0.8rem; padding: 0.25rem 0.6rem; background: rgba(255, 107, 53, 0.1); border: 1px solid rgba(255, 107, 53, 0.25); color: #ffebd2;">👤 ${m.name}</span>
                       `).join('')}
                     </div>
                   </div>

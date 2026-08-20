@@ -119,6 +119,13 @@ window.QVGameEngine = {
       if (window.QVHostPanel) window.QVHostPanel.onVotingLockChanged(locked);
     });
 
+    // ── PROCTORING: REALTIME TAB/WINDOW SWITCH ALERT TO HOST ──
+    this.socket.on('host_proctoring_alert', (data) => {
+      if (window.QVHostPanel && window.QVHostPanel.onProctoringAlert) {
+        window.QVHostPanel.onProctoringAlert(data);
+      }
+    });
+
     // ── MID-GAME LEADERBOARD BROADCAST ──
     this.socket.on('leaderboard_show', (data) => {
       if (window.QVPlayerGame) window.QVPlayerGame.onLeaderboardShow(data);

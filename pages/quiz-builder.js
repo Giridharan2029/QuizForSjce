@@ -6,22 +6,33 @@ window.QVQuizBuilderPage = {
 
   render(container) {
     container.innerHTML = `
-      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2rem;">
+      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2.25rem;">
         
-        <div>
-          <h1 style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800;">Quiz Builder Studio</h1>
-          <p class="text-secondary">Create quizzes manually, with AI topic prompts, or by uploading PDF, DOCX, or PPT documents.</p>
+        <!-- Header -->
+        <div style="background: radial-gradient(circle at 10% 20%, rgba(255, 107, 53, 0.12), transparent 60%); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div class="hero-badge">
+              <span>⚡</span>
+              <span>AI Question Studio</span>
+            </div>
+            <h1 style="font-family: var(--font-heading); font-size: 2.4rem; font-weight: 900; letter-spacing: -0.02em; margin-top: 0.35rem;">
+              Quiz Builder Studio
+            </h1>
+            <p class="text-secondary" style="font-size: 1.05rem; margin-top: 0.25rem;">
+              Generate interactive questions from PDFs, DOCX, PPT slides, Gemini AI prompts, or custom manual decks.
+            </p>
+          </div>
         </div>
 
         <!-- Mode Selector Tabs -->
-        <div style="display: flex; gap: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
-          <button class="btn ${this.activeTab === 'ai-document' ? 'btn-primary' : 'btn-secondary'}" onclick="QVQuizBuilderPage.switchTab('ai-document')">
+        <div style="display: flex; gap: 0.75rem; background: rgba(22, 16, 11, 0.85); padding: 0.4rem; border-radius: var(--radius-full); border: 1px solid var(--border-color); width: fit-content; max-width: 100%; flex-wrap: wrap;">
+          <button class="btn ${this.activeTab === 'ai-document' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: var(--radius-full);" onclick="QVQuizBuilderPage.switchTab('ai-document')">
             📄 Upload Document (PDF / DOCX / PPT)
           </button>
-          <button class="btn ${this.activeTab === 'ai-topic' ? 'btn-primary' : 'btn-secondary'}" onclick="QVQuizBuilderPage.switchTab('ai-topic')">
+          <button class="btn ${this.activeTab === 'ai-topic' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: var(--radius-full);" onclick="QVQuizBuilderPage.switchTab('ai-topic')">
             🤖 AI Topic Prompt
           </button>
-          <button class="btn ${this.activeTab === 'manual' ? 'btn-primary' : 'btn-secondary'}" onclick="QVQuizBuilderPage.switchTab('manual')">
+          <button class="btn ${this.activeTab === 'manual' ? 'btn-primary' : 'btn-secondary'}" style="border-radius: var(--radius-full);" onclick="QVQuizBuilderPage.switchTab('manual')">
             ✏️ Manual Creator
           </button>
         </div>
@@ -69,6 +80,8 @@ window.QVQuizBuilderPage = {
                 <option value="15">15 Seconds</option>
                 <option value="20" selected>20 Seconds</option>
                 <option value="30">30 Seconds</option>
+                <option value="45">45 Seconds</option>
+                <option value="60">60 Seconds</option>
               </select>
             </div>
           </div>
@@ -114,8 +127,8 @@ window.QVQuizBuilderPage = {
             <div class="input-group">
               <label class="input-label" style="font-weight: 700; color: #fff;">Number of Questions to Generate</label>
               <div style="display: flex; align-items: center; gap: 1rem;">
-                <input type="range" id="file-q-count-slider" min="3" max="20" step="1" value="5" class="input" style="flex: 1;" oninput="document.getElementById('file-q-count-val').textContent = this.value">
-                <span id="file-q-count-val" class="text-cyan font-bold" style="font-size: 1.25rem; min-width: 40px; text-align: center;">5</span> Qs
+                <input type="range" id="file-q-count-slider" min="3" max="50" step="1" value="10" class="input" style="flex: 1;" oninput="document.getElementById('file-q-count-val').textContent = this.value">
+                <span id="file-q-count-val" class="text-cyan font-bold" style="font-size: 1.25rem; min-width: 40px; text-align: center; color: #ff9e64;">10</span> Qs
               </div>
             </div>
 
@@ -158,9 +171,12 @@ window.QVQuizBuilderPage = {
             <div class="input-group">
               <label class="input-label">Number of Questions</label>
               <select id="ai-topic-count" class="input">
-                <option value="3">3 Questions</option>
-                <option value="5" selected>5 Questions</option>
-                <option value="10">10 Questions</option>
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="30">30 Questions</option>
+                <option value="40">40 Questions</option>
+                <option value="50">50 Questions</option>
               </select>
             </div>
             <div class="input-group">

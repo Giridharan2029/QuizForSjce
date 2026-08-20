@@ -13,69 +13,75 @@ window.QVDashboardPage = {
     const xpPercent = Math.min(100, Math.round((xpProgressInLevel / 1000) * 100));
 
     container.innerHTML = `
-      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2rem;">
+      <div class="animate-fade-in" style="display: flex; flex-direction: column; gap: 2.25rem;">
         
-        <!-- Dashboard Header -->
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <!-- Dashboard Hero Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; background: radial-gradient(circle at 10% 20%, rgba(255, 107, 53, 0.12), transparent 60%); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
           <div>
-            <h1 style="font-family: var(--font-heading); font-size: 2.2rem; font-weight: 800;">
-              Welcome back, <span class="text-accent">${user.name || 'Host'}</span> 👋
+            <div class="hero-badge">
+              <span>👑</span>
+              <span>Host Command Center</span>
+            </div>
+            <h1 style="font-family: var(--font-heading); font-size: 2.4rem; font-weight: 900; letter-spacing: -0.02em; margin-top: 0.35rem;">
+              Welcome back, <span class="text-accent" style="color: var(--text-accent);">${user.name || 'Host'}</span> 👋
             </h1>
-            <p class="text-secondary">Track your game stats, level progress, manage created quizzes, and manage classrooms.</p>
+            <p class="text-secondary" style="font-size: 1.05rem; margin-top: 0.25rem;">
+              Manage your live quizzes, monitor classroom progress, and climb the global ranks.
+            </p>
           </div>
 
-          <div style="display: flex; gap: 1rem;">
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
             <button class="btn btn-primary btn-lg" onclick="QVApp.navigateTo('quiz-builder')">
               <span>➕</span> Create New Quiz
             </button>
             <button class="btn btn-secondary btn-lg" onclick="QVApp.navigateTo('classroom')">
-              <span>🏫</span> Manage Classrooms
+              <span>🏫</span> Classrooms Hub
             </button>
           </div>
         </div>
 
-        <!-- Metric Stat Cards (Total Player Reached REMOVED as requested!) -->
+        <!-- Metric Stat Cards -->
         <div class="stat-grid">
           
           <!-- 1. Total Games Hosted -->
-          <div class="card stat-card card-hover">
+          <div class="card stat-card card-hover" style="border-top: 2px solid #ff6b35;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div class="stat-icon" style="color: #6c5ce7; background: rgba(108, 92, 231, 0.15);">🎮</div>
-              <span class="text-secondary" style="font-size: 0.8rem; font-weight: 600;">ACTIVE HOST</span>
+              <div class="stat-icon" style="color: #ff6b35; background: rgba(255, 107, 53, 0.15);">🎮</div>
+              <span class="text-secondary" style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;">ACTIVE HOST</span>
             </div>
             <div class="stat-value" id="dash-games-hosted">${gamesHosted}</div>
             <div class="stat-label">Total Games Hosted</div>
           </div>
 
           <!-- 2. Quizzes Created -->
-          <div class="card stat-card card-hover">
+          <div class="card stat-card card-hover" style="border-top: 2px solid #f48c06;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div class="stat-icon" style="color: #00cec9; background: rgba(0, 206, 201, 0.15);">💡</div>
-              <span class="text-secondary" style="font-size: 0.8rem; font-weight: 600;">QUIZ STORE</span>
+              <div class="stat-icon" style="color: #f48c06; background: rgba(244, 140, 6, 0.15);">💡</div>
+              <span class="text-secondary" style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;">QUIZ REPOSITORY</span>
             </div>
             <div class="stat-value">${quizzes.length}</div>
             <div class="stat-label">Quizzes Created & Ready</div>
           </div>
 
           <!-- 3. Level & XP Progress Card -->
-          <div class="card stat-card card-hover" style="grid-column: span 2;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <div class="stat-icon" style="color: #fdcb6e; background: rgba(253, 203, 110, 0.15);">⭐</div>
+          <div class="card stat-card card-hover" style="grid-column: span 2; border-top: 2px solid #fbbf24;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="stat-icon" style="color: #fbbf24; background: rgba(251, 191, 36, 0.15); font-size: 2rem;">⭐</div>
                 <div>
-                  <div style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 700;">Level ${userLevel} Master</div>
-                  <div class="text-secondary" style="font-size: 0.85rem;">Total XP: <span class="text-cyan font-bold">${currentXp} XP</span></div>
+                  <div style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800;">Level ${userLevel} Master</div>
+                  <div class="text-secondary" style="font-size: 0.88rem;">Total Experience: <span class="text-cyan font-bold" style="color: #ff9e64;">${currentXp} XP</span></div>
                 </div>
               </div>
-              <span class="level-badge" style="font-size: 0.9rem; padding: 0.25rem 0.75rem;">Level ${userLevel}</span>
+              <span class="level-badge" style="background: var(--accent-gradient); color: #fff; font-size: 0.85rem; padding: 0.35rem 0.85rem; font-weight: 800;">Rank Tier ${userLevel}</span>
             </div>
 
-            <div style="margin-top: 0.75rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
-                <span class="text-secondary">Level Progress</span>
-                <span class="text-accent font-bold">${xpProgressInLevel} / 1000 XP (${xpPercent}%)</span>
+            <div style="margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 0.35rem;">
+                <span class="text-secondary">Progress to Next Tier</span>
+                <span style="color: #ff9e64; font-weight: 800;">${xpProgressInLevel} / 1000 XP (${xpPercent}%)</span>
               </div>
-              <div class="progress-bar-bg">
+              <div class="progress-bar-bg" style="height: 10px;">
                 <div class="progress-bar-fill" style="width: ${xpPercent}%;"></div>
               </div>
             </div>
@@ -84,13 +90,13 @@ window.QVDashboardPage = {
         </div>
 
         <!-- Section 1: Manage Quizzes (Option to Delete Quiz Created) -->
-        <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700;">Manage Quizzes</h2>
-              <p class="text-secondary" style="font-size: 0.9rem;">View, launch live hosting, or delete created quizzes.</p>
+              <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800;">Quiz Store & Live Presenter</h2>
+              <p class="text-secondary" style="font-size: 0.9rem;">Launch live interactive audience sessions or manage questions.</p>
             </div>
-            <button class="btn btn-secondary" onclick="QVApp.navigateTo('quiz-builder')">➕ Build Quiz</button>
+            <button class="btn btn-primary" onclick="QVApp.navigateTo('quiz-builder')">➕ Build New Quiz</button>
           </div>
 
           <div id="quiz-manage-list">
@@ -99,30 +105,30 @@ window.QVDashboardPage = {
         </div>
 
         <!-- Section 2: Classrooms Overview -->
-        <div class="card" style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700;">Active Classrooms</h2>
-              <p class="text-secondary" style="font-size: 0.9rem;">Classrooms allow specific class students to attend hosted tests.</p>
+              <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800;">Active Classrooms</h2>
+              <p class="text-secondary" style="font-size: 0.9rem;">Classrooms allow specific enrolled cohorts to join scheduled tests.</p>
             </div>
-            <button class="btn btn-primary" onclick="QVApp.navigateTo('classroom')">🏫 Open Classroom Manager</button>
+            <button class="btn btn-secondary" onclick="QVApp.navigateTo('classroom')">🏫 Open Classroom Hub</button>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
             ${classrooms.length === 0 ? `
-              <div class="text-secondary" style="padding: 1rem; text-align: center; grid-column: 1 / -1;">
-                No classrooms created yet. Create a classroom to host tests for specific student groups.
+              <div class="text-secondary" style="padding: 2rem; text-align: center; grid-column: 1 / -1; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
+                No classrooms created yet. Create a digital classroom to organize students.
               </div>
             ` : classrooms.map(c => {
               let members = [];
               try { members = typeof c.members_json === 'string' ? JSON.parse(c.members_json) : (c.members_json || []); } catch(e) {}
               return `
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: var(--radius-md);">
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                    <div style="font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem;">${c.name}</div>
-                    <span class="room-code-badge" style="font-size: 0.9rem; padding: 0.15rem 0.5rem;">${c.code}</span>
+                <div style="background: rgba(28, 20, 14, 0.7); border: 1px solid var(--border-color); padding: 1.35rem; border-radius: var(--radius-md); transition: all 0.25s ease;" class="card-hover">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <div style="font-family: var(--font-heading); font-weight: 800; font-size: 1.15rem; color: #fff;">${c.name}</div>
+                    <span class="room-code-badge" style="font-size: 0.85rem; padding: 0.2rem 0.6rem; background: rgba(255, 107, 53, 0.15); color: #ff9e64; border-color: rgba(255, 107, 53, 0.3);">${c.code}</span>
                   </div>
-                  <div class="text-secondary" style="font-size: 0.85rem;">👨‍🎓 Enrolled Students: <span style="color: #fff; font-weight: 600;">${members.length}</span></div>
+                  <div class="text-secondary" style="font-size: 0.88rem;">👨‍🎓 Enrolled Students: <span style="color: #fff; font-weight: 700;">${members.length}</span></div>
                 </div>
               `;
             }).join('')}
